@@ -24,7 +24,8 @@ public class FusionRequestLogger implements RequestLogger {
                 .replace("{host}", ctx.host())
                 .replace("{path}", ctx.path())
                 .replace("{status}", String.valueOf(ctx.status()))
-                .replace("{ms}", String.valueOf(executionTimeMs));
+                .replace("{ms}", String.valueOf(executionTimeMs))
+                .replace("{agent}", ctx.userAgent() != null ? ctx.userAgent() : "-");
         logger.info(logMessage);
     }
 

@@ -52,7 +52,7 @@ public class WebAppConfig {
     @Builder.Default
     private boolean requestLogging = true;
     @Builder.Default
-    private String logFormat = "[{method}] | <{host}{path}> | <{status}> | <{ms}ms>";
+    private String logFormat = "[{method}] | <{host}{path}> | <{status}> | <{ms}ms> | <{agent}>";
     
     // CORS configuration
     @Builder.Default
