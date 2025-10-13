@@ -22,6 +22,7 @@ public class FusionKit {
     private static Cron cron = new Cron();
     private static final Gson gson;
     private static AppConfiguration configuration;
+    private static ClassLoader classLoader;
     public static Database database;
     public static DataDirectory data;
 
@@ -56,6 +57,14 @@ public class FusionKit {
 
     public static Cron getCron() {
         return cron;
+    }
+
+    public static ClassLoader getClassLoader() {
+        return classLoader;
+    }
+
+    public static void setClassLoader(ClassLoader loader) {
+        classLoader = loader;
     }
 
     public static void setLogLevel(String level) {

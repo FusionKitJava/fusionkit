@@ -1,4 +1,4 @@
-package de.marcandreher.fusionkit.lib.javalin;
+package de.marcandreher.fusionkit.core.routes;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -25,7 +25,7 @@ public class FusionInfoHandler implements Handler {
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         ctx.contentType("text/html");
-        ctx.result(buildInfoPage());
+        ctx.result(buildInfoPage() + ctx.attribute("debugHtml"));
     }
     
     private String buildInfoPage() {

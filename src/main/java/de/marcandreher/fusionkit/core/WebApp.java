@@ -7,10 +7,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.marcandreher.fusionkit.FusionKit;
+import de.marcandreher.fusionkit.core.debug.FusionDebugAPIHandler;
+import de.marcandreher.fusionkit.core.debug.FusionDebugCache;
+import de.marcandreher.fusionkit.core.debug.FusionDebugHandler;
+import de.marcandreher.fusionkit.core.i18n.I18nHandler;
+import de.marcandreher.fusionkit.core.i18n.I18nInfoHandler;
+import de.marcandreher.fusionkit.core.i18n.I18nSetHandler;
+import de.marcandreher.fusionkit.core.routes.FusionDatabaseInfoHandler;
+import de.marcandreher.fusionkit.core.routes.FusionInfoHandler;
 import de.marcandreher.fusionkit.lib.freemarker.FreemarkerConfigFile;
 import de.marcandreher.fusionkit.lib.helpers.WebAppConfig;
-import de.marcandreher.fusionkit.lib.javalin.FusionDatabaseInfoHandler;
-import de.marcandreher.fusionkit.lib.javalin.FusionInfoHandler;
 import de.marcandreher.fusionkit.lib.javalin.FusionRequestLogger;
 import de.marcandreher.fusionkit.lib.javalin.GlobalExceptionHandler;
 import de.marcandreher.fusionkit.lib.javalin.ProductionLevel;
@@ -28,6 +34,7 @@ public class WebApp {
     private Javalin app;
 
     public WebApp(WebAppConfig config) {
+
         long startTime = System.currentTimeMillis();
         this.logger = LoggerFactory
                 .getLogger(WebApp.class + " [" + (config.getName() != null ? config.getName() : "WebApp") + "]");
@@ -44,6 +51,20 @@ public class WebApp {
                 if(FusionKit.database != null) {
                     app.get("/fusion/database", new FusionDatabaseInfoHandler());
                 }
+                app.before("/*", new FusionDebugCache());
+                app.after("/*", new FusionDebugHandler());
+                app.get("/fusion/debug/", new FusionDebugAPIHandler());
+            }
+
+            if(config.isI18n()) {
+                if(FusionKit.getClassLoader() == null) {
+                    logger.error("ClassLoader not set in FusionKit. Please set it before using i18n in WebApp.");
+                    System.exit(1);
+                }
+
+                this.app.before("/*", new I18nHandler(FusionKit.getClassLoader(), config));
+                this.app.get("/i18n/info", new I18nInfoHandler());
+                this.app.post("/i18n/set", new I18nSetHandler());
             }
 
             this.app.start(config.getPort());

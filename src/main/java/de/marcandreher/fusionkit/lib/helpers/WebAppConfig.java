@@ -1,5 +1,7 @@
 package de.marcandreher.fusionkit.lib.helpers;
 
+import java.util.Locale;
+
 import de.marcandreher.fusionkit.lib.javalin.ProductionLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +17,16 @@ public class WebAppConfig {
     private int port;
     private String domain;
     private ProductionLevel productionLevel;
+
+    // Localized configuration
+    @Builder.Default
+    private boolean i18n = false;
+
+    @Builder.Default
+    private String i18nDirectory = "i18n";
+
+    @Builder.Default
+    private Locale i18nDefaultLanguage = Locale.ENGLISH;
     
     // Static files configuration
     @Builder.Default

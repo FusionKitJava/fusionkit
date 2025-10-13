@@ -7,50 +7,76 @@
 
   <groupId>de.marcandreher</groupId>
   <artifactId>fusionkit</artifactId>
-  <version>1.1.2</version>
+  <version>1.1.3</version>
+  <packaging>jar</packaging>
 
   <name>fusionkit</name>
-  <url></url>
+  <description>A modern, lightweight Java web framework for rapid application development</description>
+  <url>https://github.com/marcandreher/fusionkit</url>
+  
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  
+  <developers>
+    <developer>
+      <id>marcandreher</id>
+      <name>Marc Andre Her</name>
+      <email>marc@example.com</email>
+      <url>https://github.com/marcandreher</url>
+    </developer>
+  </developers>
+  
+  <scm>
+    <connection>scm:git:git://github.com/marcandreher/fusionkit.git</connection>
+    <developerConnection>scm:git:ssh://github.com:marcandreher/fusionkit.git</developerConnection>
+    <url>https://github.com/marcandreher/fusionkit/tree/master</url>
+  </scm>
 
   <properties>
+    <!-- Project Configuration -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.version>21</java.version>
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
 
-    <!--Web
-    dependencies-->
+    <!-- Web Framework Dependencies -->
     <javalin.version>6.7.0</javalin.version>
-    <okhttp.version>4.12.0</okhttp.version>
     <freemarker.version>2.3.34</freemarker.version>
+    <okhttp.version>4.12.0</okhttp.version>
 
-    <!--Database
-    dependencies-->
+    <!-- Database Dependencies -->
     <mysql.connector.version>9.4.0</mysql.connector.version>
     <hikari.version>7.0.2</hikari.version>
 
-    <!--Util
-    dependencies-->
+    <!-- Utility Dependencies -->
+    <gson.version>2.13.2</gson.version>
     <logback.version>1.5.18</logback.version>
     <lombok.version>1.18.42</lombok.version>
-    <tomlj.version>1.1.1</tomlj.version>
-    <gson.version>2.13.2</gson.version>
+    <toml4j.version>0.7.2</toml4j.version>
+    <caffeine.version>3.1.8</caffeine.version>
+    <sitemapgen4j.version>1.1.2</sitemapgen4j.version>
 
-    <!--Testing
-    dependencies-->
+    <!-- Testing Dependencies -->
     <junit.version>4.11</junit.version>
 
-
-    <!--Plugin
-    versions-->
-    <maven.compiler.version>3.11.0</maven.compiler.version>
-    <exec.maven.version>3.1.0</exec.maven.version>
-    <build.helper.maven.version>3.4.0</build.helper.maven.version>
-    <maven.clean.version>3.5.0</maven.clean.version>
-    <java.version>21</java.version>
+    <!-- Plugin Versions -->
+    <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
+    <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
+    <maven.clean.plugin.version>3.5.0</maven.clean.plugin.version>
+    <maven.surefire.plugin.version>3.1.2</maven.surefire.plugin.version>
+    <exec.maven.plugin.version>3.1.0</exec.maven.plugin.version>
+    <build.helper.maven.plugin.version>3.4.0</build.helper.maven.plugin.version>
   </properties>
 
   <dependencies>
-    <!-- Web dependencies -->
+    <!-- =============================================== -->
+    <!-- Web Framework Dependencies -->
+    <!-- =============================================== -->
     <dependency>
       <groupId>io.javalin</groupId>
       <artifactId>javalin</artifactId>
@@ -62,17 +88,23 @@
       <version>${javalin.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp</artifactId>
-      <version>${okhttp.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.freemarker</groupId>
       <artifactId>freemarker</artifactId>
       <version>${freemarker.version}</version>
     </dependency>
 
-    <!-- Database dependencies -->
+    <!-- =============================================== -->
+    <!-- HTTP Client Dependencies -->
+    <!-- =============================================== -->
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>${okhttp.version}</version>
+    </dependency>
+
+    <!-- =============================================== -->
+    <!-- Database Dependencies -->
+    <!-- =============================================== -->
     <dependency>
       <groupId>com.mysql</groupId>
       <artifactId>mysql-connector-j</artifactId>
@@ -84,34 +116,59 @@
       <version>${hikari.version}</version>
     </dependency>
 
-    <!-- Util dependencies -->
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>${logback.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>${lombok.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.moandjiezana.toml</groupId>
-      <artifactId>toml4j</artifactId>
-      <version>0.7.2</version>
-    </dependency>
+    <!-- =============================================== -->
+    <!-- JSON & Configuration Dependencies -->
+    <!-- =============================================== -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>${gson.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.github.dfabulich</groupId>
-      <artifactId>sitemapgen4j</artifactId>
-      <version>1.1.2</version>
+      <groupId>com.moandjiezana.toml</groupId>
+      <artifactId>toml4j</artifactId>
+      <version>${toml4j.version}</version>
     </dependency>
 
-    <!-- Testing dependencies -->
+    <!-- =============================================== -->
+    <!-- Logging Dependencies -->
+    <!-- =============================================== -->
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
+    </dependency>
+
+    <!-- =============================================== -->
+    <!-- Caching Dependencies -->
+    <!-- =============================================== -->
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+      <version>${caffeine.version}</version>
+    </dependency>
+
+    <!-- =============================================== -->
+    <!-- SEO & Utility Dependencies -->
+    <!-- =============================================== -->
+    <dependency>
+      <groupId>com.github.dfabulich</groupId>
+      <artifactId>sitemapgen4j</artifactId>
+      <version>${sitemapgen4j.version}</version>
+    </dependency>
+
+    <!-- =============================================== -->
+    <!-- Development Dependencies -->
+    <!-- =============================================== -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+    </dependency>
+
+    <!-- =============================================== -->
+    <!-- Testing Dependencies -->
+    <!-- =============================================== -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -121,33 +178,47 @@
   </dependencies>
 
   <build>
+    <!-- =============================================== -->
+    <!-- Resource Configuration -->
+    <!-- =============================================== -->
     <resources>
       <resource>
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
+        <includes>
+          <include>**/*.properties</include>
+          <include>**/*.xml</include>
+          <include>**/*.html</include>
+          <include>**/*.ftl</include>
+        </includes>
       </resource>
     </resources>
-    <pluginManagement>
 
+    <!-- =============================================== -->
+    <!-- Plugin Management -->
+    <!-- =============================================== -->
+    <pluginManagement>
       <plugins>
+        <!-- Compiler Plugin -->
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>${maven.compiler.version}</version>
+          <version>${maven.compiler.plugin.version}</version>
           <configuration>
             <source>${java.version}</source>
             <target>${java.version}</target>
+            <encoding>UTF-8</encoding>
             <compilerArgs>
               <arg>-parameters</arg>
+              <arg>-Xlint:unchecked</arg>
+              <arg>-Xlint:deprecation</arg>
             </compilerArgs>
             <annotationProcessorPaths>
-              <!-- Lombok Processor -->
               <path>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
               </path>
-              <!-- OpenAPI Annotation Processor -->
               <path>
                 <groupId>io.javalin.community.openapi</groupId>
                 <artifactId>openapi-annotation-processor</artifactId>
@@ -156,15 +227,75 @@
             </annotationProcessorPaths>
           </configuration>
         </plugin>
+
+        <!-- Resources Plugin -->
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>3.3.1</version>
+          <version>${maven.resources.plugin.version}</version>
           <configuration>
             <encoding>UTF-8</encoding>
+            <nonFilteredFileExtensions>
+              <nonFilteredFileExtension>jar</nonFilteredFileExtension>
+              <nonFilteredFileExtension>zip</nonFilteredFileExtension>
+              <nonFilteredFileExtension>war</nonFilteredFileExtension>
+            </nonFilteredFileExtensions>
           </configuration>
+        </plugin>
+
+        <!-- Surefire Plugin for Testing -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven.surefire.plugin.version}</version>
+          <configuration>
+            <systemPropertyVariables>
+              <java.util.logging.manager>org.apache.logging.log4j.jul.LogManager</java.util.logging.manager>
+            </systemPropertyVariables>
+          </configuration>
+        </plugin>
+
+        <!-- Clean Plugin -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>${maven.clean.plugin.version}</version>
+        </plugin>
+
+        <!-- Exec Plugin -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>${exec.maven.plugin.version}</version>
+        </plugin>
+
+        <!-- Build Helper Plugin -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>${build.helper.maven.plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
+
+    <!-- =============================================== -->
+    <!-- Active Plugins -->
+    <!-- =============================================== -->
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
+      
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+      </plugin>
+      
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
+    </plugins>
   </build>
 </project>

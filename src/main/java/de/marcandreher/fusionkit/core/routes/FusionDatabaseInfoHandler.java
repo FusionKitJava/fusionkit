@@ -1,4 +1,4 @@
-package de.marcandreher.fusionkit.lib.javalin;
+package de.marcandreher.fusionkit.core.routes;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -21,7 +21,7 @@ public class FusionDatabaseInfoHandler implements Handler {
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         ctx.contentType("text/html");
-        ctx.result(buildDatabaseInfoPage());
+        ctx.result(buildDatabaseInfoPage() + ctx.attribute("debugHtml"));
     }
 
     private String buildDatabaseInfoPage() {
