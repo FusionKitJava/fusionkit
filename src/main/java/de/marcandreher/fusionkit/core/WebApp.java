@@ -10,6 +10,7 @@ import de.marcandreher.fusionkit.FusionKit;
 import de.marcandreher.fusionkit.core.debug.FusionDebugAPIHandler;
 import de.marcandreher.fusionkit.core.debug.FusionDebugCache;
 import de.marcandreher.fusionkit.core.debug.FusionDebugHandler;
+import de.marcandreher.fusionkit.core.debug.FusionDebugRequestAPIHandler;
 import de.marcandreher.fusionkit.core.i18n.I18nHandler;
 import de.marcandreher.fusionkit.core.i18n.I18nInfoHandler;
 import de.marcandreher.fusionkit.core.i18n.I18nSetHandler;
@@ -54,6 +55,7 @@ public class WebApp {
                 app.before("/*", new FusionDebugCache());
                 app.after("/*", new FusionDebugHandler());
                 app.get("/fusion/debug/", new FusionDebugAPIHandler());
+                app.get("/fusion/request/", new FusionDebugRequestAPIHandler());
             }
 
             if(config.isI18n()) {

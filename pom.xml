@@ -7,7 +7,7 @@
 
   <groupId>de.marcandreher</groupId>
   <artifactId>fusionkit</artifactId>
-  <version>1.1.3</version>
+  <version>1.1.4</version>
   <packaging>jar</packaging>
 
   <name>fusionkit</name>
@@ -55,10 +55,10 @@
 
     <!-- Utility Dependencies -->
     <gson.version>2.13.2</gson.version>
-    <logback.version>1.5.18</logback.version>
+    <logback.version>1.5.19</logback.version>
     <lombok.version>1.18.42</lombok.version>
     <toml4j.version>0.7.2</toml4j.version>
-    <caffeine.version>3.1.8</caffeine.version>
+    <caffeine.version>3.2.2</caffeine.version>
     <sitemapgen4j.version>1.1.2</sitemapgen4j.version>
 
     <!-- Testing Dependencies -->
