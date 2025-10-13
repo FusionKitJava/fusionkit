@@ -1,7 +1,5 @@
 package de.marcandreher.fusionkit.core.debug;
 
-import java.io.File;
-
 import org.jetbrains.annotations.NotNull;
 
 import io.javalin.http.Context;
@@ -17,9 +15,13 @@ public class FusionDebugCache implements Handler {
         ctx.attribute("debugKey", key);
 
         // Load debugger.html file from resources
-        File fusionDebugHtml = new File(FusionDebugCache.class.getClassLoader().getResource("debugger.html").toURI());
-        String htmlContent = new String(java.nio.file.Files.readAllBytes(fusionDebugHtml.toPath())).replaceAll("%key%", key);
-        ctx.attribute("debugHtml", htmlContent);
+        try (java.io.InputStream inputStream = FusionDebugCache.class.getClassLoader().getResourceAsStream("debugger.html")) {
+            if (inputStream == null) {
+                throw new IllegalStateException("debugger.html not found in resources");
+            }
+            String htmlContent = new String(inputStream.readAllBytes()).replaceAll("%key%", key);
+            ctx.attribute("debugHtml", htmlContent);
+        }
     }
 
 }
