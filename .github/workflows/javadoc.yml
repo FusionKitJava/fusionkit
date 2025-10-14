@@ -29,19 +29,18 @@ jobs:
 
       - name: Generate Javadoc with Maven
         run: |
-          cd fusionkit
           mvn clean compile javadoc:javadoc -DadditionalJOption=-Xdoclint:none
 
       - name: Copy Javadoc to docs directory
         run: |
           mkdir -p docs
-          if [ -d "fusionkit/target/site/apidocs" ]; then
-            cp -r fusionkit/target/site/apidocs/* docs/
-          elif [ -d "fusionkit/target/reports/apidocs" ]; then
-            cp -r fusionkit/target/reports/apidocs/* docs/
+          if [ -d "target/site/apidocs" ]; then
+            cp -r target/site/apidocs/* docs/
+          elif [ -d "target/reports/apidocs" ]; then
+            cp -r target/reports/apidocs/* docs/
           else
             echo "Javadoc directory not found, listing target contents:"
-            ls -la fusionkit/target/ || true
+            ls -la target/ || true
             exit 1
           fi
 
