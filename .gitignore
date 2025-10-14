@@ -1,4 +1,8 @@
-# Project
-
+# FusionKit Readme.md
+/data/
+/logs/
 /target/
+/public/sitemap.xml
+
+*.log
 *.class

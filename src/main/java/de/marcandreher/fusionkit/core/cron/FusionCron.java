@@ -14,14 +14,24 @@ import de.marcandreher.fusionkit.core.FusionKit;
 
 public class FusionCron {
     private final Logger logger = FusionKit.getLogger(FusionCron.class);
-    private static ScheduledExecutorService scheduler = java.util.concurrent.Executors.newScheduledThreadPool(5);
+    private ScheduledExecutorService scheduler;
     private final List<CronTask> tasks = new ArrayList<>();
 
     public static final List<CronTaskMeta> taskMetas = new ArrayList<>();
+    
+    public FusionCron() {
+        this.scheduler = java.util.concurrent.Executors.newScheduledThreadPool(5);
+    }
+
+    public FusionCron(int threadPoolSize) {
+        this.scheduler = java.util.concurrent.Executors.newScheduledThreadPool(threadPoolSize);
+    }
+    
     /**
      * Runs task every X minutes.
      */
     public void registerTimedTask(long intervalMinutes, CronTask task) {
+        ensureSchedulerAvailable();
         tasks.add(task);
         logger.debug("Registering timed task: " + task.getName() + " to run every " + intervalMinutes + " minutes");
 
@@ -45,6 +55,7 @@ public class FusionCron {
      * Runs task every day at specified hour:minute.
      */
     public void registerFixedRateTask(int targetHour, int targetMinute, CronTask task) {
+        ensureSchedulerAvailable();
         tasks.add(task);
         logger.debug("Registering fixed rate task: " + task.getName() + " to run every day at " + targetHour + ":"
                 + targetMinute);
@@ -70,6 +81,7 @@ public class FusionCron {
     }
 
     public void registerTaskEachFullHour(CronTask task) {
+        ensureSchedulerAvailable();
         logger.debug("Registering task: " + task.getName() + " to run every full hour");
 
         long initialDelay = fullHourDelay();
@@ -112,10 +124,18 @@ public class FusionCron {
         return Duration.between(now, nextRun).getSeconds();
     }
 
+    private void ensureSchedulerAvailable() {
+        if (scheduler == null || scheduler.isShutdown()) {
+            scheduler = java.util.concurrent.Executors.newScheduledThreadPool(5);
+        }
+    }
+
     public void shutdown() {
         for (CronTask task : tasks) {
             task.shutdown();
         }
-        scheduler.shutdown();
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdown();
+        }
     }
 }
