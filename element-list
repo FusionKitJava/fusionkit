@@ -1,0 +1,13 @@
+de.marcandreher.fusionkit.core
+de.marcandreher.fusionkit.core.app
+de.marcandreher.fusionkit.core.config
+de.marcandreher.fusionkit.core.cron
+de.marcandreher.fusionkit.core.database
+de.marcandreher.fusionkit.core.debug
+de.marcandreher.fusionkit.core.error
+de.marcandreher.fusionkit.core.externals
+de.marcandreher.fusionkit.core.i18n
+de.marcandreher.fusionkit.core.javalin
+de.marcandreher.fusionkit.core.javalin.engine
+de.marcandreher.fusionkit.core.models
+de.marcandreher.fusionkit.core.routes
