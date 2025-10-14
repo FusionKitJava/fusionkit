@@ -75,8 +75,8 @@ public class FusionKit {
         return classLoader;
     }
 
-    public static void setClassLoader(ClassLoader loader) {
-        classLoader = loader;
+    public static void setApplication(Class<?> app) {
+        classLoader = app.getClassLoader();
     }
 
     public static Logger getLogger(Class<?> cls) {

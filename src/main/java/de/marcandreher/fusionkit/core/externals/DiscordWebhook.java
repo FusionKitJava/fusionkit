@@ -59,6 +59,7 @@ public class DiscordWebhook {
      * @throws IllegalStateException if the webhook has no content or embeds
      */
     public void send() throws IOException {
+        long startTime = System.currentTimeMillis();
         validateMessage();
         
         JsonObject payload = createPayload();
@@ -69,16 +70,16 @@ public class DiscordWebhook {
                 .post(body)
                 .addHeader("User-Agent", "FusionKit-DiscordWebhook/1.0")
                 .build();
-        
-        logger.debug("Sending Discord webhook to: {}", webhookUrl);
-        
+
+        logger.debug("Sending Discord webhook to: <{}>", webhookUrl.split("/")[5]);
+
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 String errorBody = response.body() != null ? response.body().string() : "No response body";
                 logger.error("Discord webhook failed: {} {} - {}", response.code(), response.message(), errorBody);
                 throw new IOException("Discord webhook request failed: " + response.code() + " " + response.message() + " - " + errorBody);
             }
-            logger.debug("Discord webhook sent successfully");
+            logger.debug("Discord webhook sent successfully in <{}ms>", System.currentTimeMillis() - startTime);
         }
     }
     

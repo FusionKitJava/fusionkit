@@ -2,7 +2,7 @@
 
 **A modern, lightweight Java web framework for rapid application development**
 
-[![Java Version](https://img.shields.io/badge/Java-20%2B-orange.svg)](https://openjdk.org/)
+[![Java Version](https://img.shields.io/badge/Java-21%2B-orange.svg)](https://openjdk.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 FusionKit is a comprehensive Java web framework that combines the best tools and libraries into a cohesive, easy-to-use package. Built on top of battle-tested technologies like Javalin, Freemarker, and HikariCP, it provides everything you need to build modern web applications quickly and efficiently.
