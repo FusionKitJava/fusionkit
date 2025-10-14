@@ -62,7 +62,7 @@
     <sitemapgen4j.version>1.1.2</sitemapgen4j.version>
 
     <!-- Testing Dependencies -->
-    <junit.version>4.11</junit.version>
+    <junit.version>4.13.1</junit.version>
 
     <!-- Plugin Versions -->
     <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
