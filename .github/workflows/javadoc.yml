@@ -1,0 +1,35 @@
+name: Generate and Deploy Javadoc
+
+on:
+  push:
+    branches:
+      - main  # or your default branch
+
+permissions:
+  contents: write  # required to push to gh-pages
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21' # or your version
+
+      - name: Generate Javadoc
+        run: |
+          mkdir -p docs
+          javadoc -d docs -sourcepath src/main/java -subpackages your.main.package
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: gh-pages
