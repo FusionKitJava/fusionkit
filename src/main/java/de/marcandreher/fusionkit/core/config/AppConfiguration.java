@@ -8,17 +8,17 @@ import org.slf4j.Logger;
 import com.moandjiezana.toml.Toml;
 import com.moandjiezana.toml.TomlWriter;
 
+import de.marcandreher.fusionkit.core.app.FileStructureManager;
+
 public class AppConfiguration {
 
     private Object config;
 
-    public AppConfiguration(Object config, Logger logger) {
-        File configDir = new File(".config");
-        if (!configDir.exists()) {
-            configDir.mkdirs();
-        }
+    public AppConfiguration(String file, Object config, Logger logger) {
+        FileStructureManager configDirectory = new FileStructureManager(FileStructureManager.DirectoryType.CONFIG);
+        configDirectory.persist();
 
-        File configFile = new File(configDir, "fusionkit.toml");
+        File configFile = new File(configDirectory.getDirectory(), file);
         if (!configFile.exists()) {
             TomlWriter writer = new TomlWriter();
             try {

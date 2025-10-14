@@ -158,6 +158,10 @@ public class WebApp {
             javalinConfig.bundledPlugins.enableRouteOverview("/routes");
         }
 
+        if(config.getJavalinConfigurator() != null) {
+            config.getJavalinConfigurator().configure(javalinConfig);
+        }
+
         logger.debug("WebApp Configuration: <{}>", config);
     }
 

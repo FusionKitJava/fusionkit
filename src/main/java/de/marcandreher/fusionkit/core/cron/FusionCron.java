@@ -12,8 +12,8 @@ import org.slf4j.Logger;
 
 import de.marcandreher.fusionkit.core.FusionKit;
 
-public class Cron {
-    private final Logger logger = FusionKit.getLogger(Cron.class);
+public class FusionCron {
+    private final Logger logger = FusionKit.getLogger(FusionCron.class);
     private static ScheduledExecutorService scheduler = java.util.concurrent.Executors.newScheduledThreadPool(5);
     private final List<CronTask> tasks = new ArrayList<>();
 

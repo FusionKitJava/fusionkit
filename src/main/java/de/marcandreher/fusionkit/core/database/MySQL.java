@@ -196,7 +196,7 @@ public final class MySQL implements AutoCloseable {
 
 	private void logSQL(String message) {
 		if (Database.config.isLogSql()) {
-			Database.logger.info(message.replaceAll("[\r\n]+$", ""));
+			Database.logger.debug(message.replaceAll("[\r\n]+$", ""));
 		}
 	}
 

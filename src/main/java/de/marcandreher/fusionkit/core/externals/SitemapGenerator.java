@@ -17,11 +17,13 @@ import com.redfin.sitemapgenerator.WebSitemapGenerator;
 public class SitemapGenerator {
     private static final Logger logger = FusionKit.getLogger(SitemapGenerator.class);
 
+    private long startTime = System.currentTimeMillis();
     private WebSitemapGenerator wsg = null;
     private String domain;
     private int urlCount = 0;
     private static final double MAX_PRIORITY = 1.0;
     private static final double MIN_PRIORITY = 0.1;
+
 
     public SitemapGenerator(String domain, String directoryPath) throws MalformedURLException {
         File sitemapDirectory = new File(directoryPath);
@@ -29,7 +31,6 @@ public class SitemapGenerator {
         try {
             wsg = new WebSitemapGenerator(domain, sitemapDirectory);
             this.domain = domain;
-            logger.debug("WebSitemapGenerator created successfully");
         } catch (Exception e) {
             logger.error("Failed to create WebSitemapGenerator: {}", e.getMessage(), e);
             throw e;
@@ -74,7 +75,6 @@ public class SitemapGenerator {
             options.lastMod(cal.getTime());
             
             wsg.addUrl(options.build());
-            logger.debug("Adding URL: {} with priority: {}", fullUrlString, priority);
         } catch (URISyntaxException e) {
             logger.error("URI syntax error for URL: {} - {}", url, e.getMessage(), e);
         } catch (MalformedURLException e) {
@@ -84,9 +84,11 @@ public class SitemapGenerator {
         }
     }
 
-    public void write() {
+    public long write() {
         try {
             wsg.write();
+            logger.debug("Sitemap written with {} URLs in {}ms", urlCount, System.currentTimeMillis() - startTime);
+            return System.currentTimeMillis() - startTime;
         } catch (Exception e) {
             logger.error("Error writing sitemap: {}", e.getMessage(), e);
             throw e;
