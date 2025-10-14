@@ -3,7 +3,11 @@ name: Generate and Deploy Javadoc
 on:
   push:
     branches:
-      - main  # or your default branch
+      - master  # Updated to use master branch
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:  # Allow manual triggering
 
 permissions:
   contents: write  # required to push to gh-pages
@@ -20,15 +24,30 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '21' # or your version
+          java-version: '21'
+          cache: 'maven'
 
-      - name: Generate Javadoc
+      - name: Generate Javadoc with Maven
+        run: |
+          cd fusionkit
+          mvn clean compile javadoc:javadoc -DadditionalJOption=-Xdoclint:none
+
+      - name: Copy Javadoc to docs directory
         run: |
           mkdir -p docs
-          javadoc -d docs -sourcepath src/main/java -subpackages your.main.package
+          if [ -d "fusionkit/target/site/apidocs" ]; then
+            cp -r fusionkit/target/site/apidocs/* docs/
+          elif [ -d "fusionkit/target/reports/apidocs" ]; then
+            cp -r fusionkit/target/reports/apidocs/* docs/
+          else
+            echo "Javadoc directory not found, listing target contents:"
+            ls -la fusionkit/target/ || true
+            exit 1
+          fi
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
+        if: github.ref == 'refs/heads/master'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
