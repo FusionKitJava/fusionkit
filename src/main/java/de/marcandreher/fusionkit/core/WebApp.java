@@ -2,6 +2,7 @@ package de.marcandreher.fusionkit.core;
 
 import java.util.Map;
 
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 
 import de.marcandreher.fusionkit.core.app.FileStructureManager;
@@ -38,8 +39,17 @@ public class WebApp {
         this.logger = FusionKit.getLogger(WebApp.class, config.getName());
         this.config = config;
         try {
-        
-            app = Javalin.create(this::configureJavalin);
+            app = Javalin.create(javalinConfig -> {
+                // Configure custom thread pool name for Jetty
+                javalinConfig.jetty.modifyServer(server -> {
+                    
+                    if (server.getThreadPool() instanceof QueuedThreadPool queuedThreadPool) {
+                        queuedThreadPool.setName("FK-WebApp-" + config.getName());
+                    }
+                });
+                // Apply other configurations
+                configureJavalin(javalinConfig);
+            });
 
             if (ProductionLevel.isInDevelopment(config.getProductionLevel())) {
                 // Configure global exception handler
@@ -163,6 +173,10 @@ public class WebApp {
         }
 
         logger.debug("WebApp Configuration: <{}>", config);
+    }
+
+    public String getSafeName() {
+        return config.getName().toLowerCase().replaceAll("[^a-z0-9]", "-");
     }
 
     public Javalin getApp() {

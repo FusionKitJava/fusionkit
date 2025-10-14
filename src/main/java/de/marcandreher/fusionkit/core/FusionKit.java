@@ -11,42 +11,39 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import de.marcandreher.fusionkit.core.app.FileStructureManager;
+import de.marcandreher.fusionkit.core.app.Shutdown;
 import de.marcandreher.fusionkit.core.app.FileStructureManager.DirectoryType;
 import de.marcandreher.fusionkit.core.app.VersionInfo;
+import de.marcandreher.fusionkit.core.cmd.Command;
+import de.marcandreher.fusionkit.core.cmd.CommandService;
+import de.marcandreher.fusionkit.core.cmd.implementations.AppCommand;
 import de.marcandreher.fusionkit.core.config.AppConfiguration;
 import de.marcandreher.fusionkit.core.cron.FusionCron;
 import de.marcandreher.fusionkit.core.database.Database;
 
 public class FusionKit {
 
-    private static final FileStructureManager dataDirectory = new FileStructureManager(DirectoryType.DATA);
-    private static final Logger logger = FusionKit.getLogger(FusionKit.class);
-    private static final Map<String, AppConfiguration> configurations = new HashMap<>();
-    private static final ArrayList<WebApp> webApps = new ArrayList<>();
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    private static FusionCron cron = new FusionCron();
-    private static ClassLoader classLoader;
+    protected static final FileStructureManager dataDirectory = new FileStructureManager(DirectoryType.DATA);
+    protected static final Logger logger = FusionKit.getLogger(FusionKit.class);
+    protected static final Map<String, AppConfiguration> configurations = new HashMap<>();
+    protected static final ArrayList<WebApp> webApps = new ArrayList<>();
+    protected static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    protected static FusionCron cron = new FusionCron();
+    protected static CommandService commandService = new CommandService();
+    protected static ClassLoader classLoader;
     public static Database database;
     
-    
-
     static {
+        commandService.start();
+        commandService.registerCommand(new AppCommand(webApps));
         dataDirectory.persist();
         VersionInfo.loadVersionProperties();
         logger.info("Using FusionKit v{} <{}>", VersionInfo.getVersion(), VersionInfo.getBuildTimestamp());
 
-        Runtime.getRuntime().addShutdownHook(new Thread(FusionKit::shutdown));
+        Shutdown shutdown = new Shutdown();
+        Runtime.getRuntime().addShutdownHook(shutdown.getShutdownHook());
     }
-
-    private static void shutdown() {
-        logger.info("Shutting down FusionKit...");
-        for (WebApp app : webApps) {
-            app.stop();
-        }
-        cron.shutdown();
-        logger.info("Shutdown complete.");
-    }
-
+    
     public static void setConfig(String file, Class<?> config) {
         Object configInstance;
         try {
@@ -61,6 +58,18 @@ public class FusionKit {
 
     public static AppConfiguration getConfig(String file) {
         return configurations.get(file);
+    }
+
+    public static void registerCommand(Class<? extends Command> commandClass) {
+        Command commandInstance;
+        try {
+            commandInstance = commandClass.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            logger.error("Failed to instantiate command class: {}", e.getMessage(), e);
+            return;
+        }
+
+        commandService.registerCommand(commandInstance);
     }
 
     public static Gson getGson() {

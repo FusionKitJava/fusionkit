@@ -5,26 +5,51 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 
 import de.marcandreher.fusionkit.core.FusionKit;
 
 public class FusionCron {
+    private final static int DEFAULT_THREAD_POOL_SIZE = 5;
     private final Logger logger = FusionKit.getLogger(FusionCron.class);
     private ScheduledExecutorService scheduler;
     private final List<CronTask> tasks = new ArrayList<>();
 
     public static final List<CronTaskMeta> taskMetas = new ArrayList<>();
     
+    private static class FusionKitThreadFactory implements ThreadFactory {
+        private final AtomicInteger poolNumber = new AtomicInteger(1);
+        private final ThreadGroup group;
+        private final AtomicInteger threadNumber = new AtomicInteger(1);
+        private final String namePrefix;
+
+        FusionKitThreadFactory() {
+            group = Thread.currentThread().getThreadGroup();
+            namePrefix = "FK-Cron-" + poolNumber.getAndIncrement() + "-Thread-";
+        }
+
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
+            if (t.isDaemon())
+                t.setDaemon(false);
+            if (t.getPriority() != Thread.NORM_PRIORITY)
+                t.setPriority(Thread.NORM_PRIORITY);
+            return t;
+        }
+    }
+    
     public FusionCron() {
-        this.scheduler = java.util.concurrent.Executors.newScheduledThreadPool(5);
+        this.scheduler = Executors.newScheduledThreadPool(DEFAULT_THREAD_POOL_SIZE, new FusionKitThreadFactory());
     }
 
     public FusionCron(int threadPoolSize) {
-        this.scheduler = java.util.concurrent.Executors.newScheduledThreadPool(threadPoolSize);
+        this.scheduler = Executors.newScheduledThreadPool(threadPoolSize, new FusionKitThreadFactory());
     }
     
     /**
@@ -126,7 +151,7 @@ public class FusionCron {
 
     private void ensureSchedulerAvailable() {
         if (scheduler == null || scheduler.isShutdown()) {
-            scheduler = java.util.concurrent.Executors.newScheduledThreadPool(5);
+            scheduler = java.util.concurrent.Executors.newScheduledThreadPool(DEFAULT_THREAD_POOL_SIZE, new FusionKitThreadFactory());
         }
     }
 

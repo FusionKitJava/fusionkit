@@ -1,10 +1,8 @@
 <configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="JLINE" class="de.marcandreher.fusionkit.core.logger.JLineConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <charset>UTF-8</charset>
-            <pattern>
-                %highlight(%-5level) %yellow(%d{yyyy-MM-dd HH:mm:ss}) %magenta(%logger{36}) - %msg%n%red(%throwable)
-            </pattern>
+            <pattern>%highlight(%-5level) %yellow(%d{yyyy-MM-dd HH:mm:ss}) %magenta(%logger{36}) - %msg %red(%ex{short})</pattern>
         </encoder>
     </appender>
 
@@ -37,9 +35,9 @@
     <logger name="org.eclipse.jetty.util" level="OFF" additivity="false" />
     <logger name="io.javalin.Javalin" level="OFF" additivity="false" />
     <logger name="com.zaxxer.hikari" level="ERROR" additivity="true" />
-    
+
     <root>
-        <appender-ref ref="STDOUT" />
+        <appender-ref ref="JLINE"/>
         <appender-ref ref="ROLLING_FILE" />
     </root>
 </configuration>

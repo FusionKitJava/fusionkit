@@ -11,6 +11,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import de.marcandreher.fusionkit.core.FusionKit;
+import de.marcandreher.fusionkit.core.cmd.implementations.DatabaseCommand;
 import de.marcandreher.fusionkit.core.config.DatabaseConfiguration;
 
 public class Database {
@@ -31,6 +32,7 @@ public class Database {
         }
         this.hikariConfig = new HikariConfig();
         FusionKit.database = this;
+        FusionKit.registerCommand(DatabaseCommand.class);
     }
 
     /**
@@ -91,6 +93,21 @@ public class Database {
             logger.info("Connected to Database (" + url + ")");
         } catch (SQLException e) {
             logger.error("Error while connecting to MySQL database " + e.getMessage());
+        }
+    }
+
+    public HikariConfig getConfig() {
+        return hikariConfig;
+    }
+
+    public HikariDataSource getDataSource() {
+        return dataSource;
+    }
+
+    public void shutdown() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+            logger.info("Database connection pool shut down.");
         }
     }
 
