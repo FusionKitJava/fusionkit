@@ -288,8 +288,6 @@
             <docencoding>UTF-8</docencoding>
             <charset>UTF-8</charset>
             <source>21</source>
-            <target>21</target>
-            <windowTitle>FusionKit ${project.version} API</windowTitle>
             <doctitle>FusionKit ${project.version} API Documentation</doctitle>
             <bottom>
               <![CDATA[
