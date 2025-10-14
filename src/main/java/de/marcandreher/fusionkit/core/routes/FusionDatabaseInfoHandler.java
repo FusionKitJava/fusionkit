@@ -9,19 +9,32 @@ import org.jetbrains.annotations.NotNull;
 
 import com.zaxxer.hikari.HikariPoolMXBean;
 
-import de.marcandreher.fusionkit.lib.database.Database;
-import de.marcandreher.fusionkit.lib.database.MySQL;
+import de.marcandreher.fusionkit.core.config.WebAppConfig;
+import de.marcandreher.fusionkit.core.database.Database;
+import de.marcandreher.fusionkit.core.database.MySQL;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 public class FusionDatabaseInfoHandler implements Handler {
+    
+    private WebAppConfig config;
+
+    public FusionDatabaseInfoHandler(WebAppConfig config) {
+        this.config = config;
+    }
+
 
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         ctx.contentType("text/html");
-        ctx.result(buildDatabaseInfoPage() + ctx.attribute("debugHtml"));
+        String debugHtml = buildDatabaseInfoPage();
+        if(config.isDebugger()) {
+            debugHtml += ctx.attribute("debugHtml");
+        }
+
+        ctx.result(debugHtml);
     }
 
     private String buildDatabaseInfoPage() {

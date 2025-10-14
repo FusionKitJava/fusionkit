@@ -6,7 +6,7 @@ import io.javalin.http.Handler;
 import java.util.*;
 import java.util.MissingResourceException;
 
-import de.marcandreher.fusionkit.lib.helpers.WebAppConfig;
+import de.marcandreher.fusionkit.core.config.WebAppConfig;
 
 public class I18nHandler implements Handler {
 

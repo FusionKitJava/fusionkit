@@ -8,9 +8,9 @@ import java.time.format.DateTimeFormatter;
 
 import org.jetbrains.annotations.NotNull;
 
-import de.marcandreher.fusionkit.FusionKit;
-import de.marcandreher.fusionkit.lib.helpers.WebAppConfig;
-import de.marcandreher.fusionkit.util.VersionInfo;
+import de.marcandreher.fusionkit.core.FusionKit;
+import de.marcandreher.fusionkit.core.app.VersionInfo;
+import de.marcandreher.fusionkit.core.config.WebAppConfig;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 
@@ -25,7 +25,12 @@ public class FusionInfoHandler implements Handler {
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         ctx.contentType("text/html");
-        ctx.result(buildInfoPage() + ctx.attribute("debugHtml"));
+        String debugHtml = buildInfoPage();
+        if(config.isDebugger()) {
+            debugHtml += ctx.attribute("debugHtml");
+        }
+
+        ctx.result(debugHtml);
     }
     
     private String buildInfoPage() {

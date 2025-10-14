@@ -1,27 +1,25 @@
 package de.marcandreher.fusionkit.core;
 
-import java.io.File;
 import java.util.Map;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import de.marcandreher.fusionkit.FusionKit;
+import de.marcandreher.fusionkit.core.app.FileStructureManager;
+import de.marcandreher.fusionkit.core.config.FreemarkerConfiguration;
+import de.marcandreher.fusionkit.core.config.WebAppConfig;
 import de.marcandreher.fusionkit.core.debug.FusionDebugAPIHandler;
 import de.marcandreher.fusionkit.core.debug.FusionDebugCache;
 import de.marcandreher.fusionkit.core.debug.FusionDebugHandler;
 import de.marcandreher.fusionkit.core.debug.FusionDebugRequestAPIHandler;
+import de.marcandreher.fusionkit.core.error.JavalinExceptionHandler;
 import de.marcandreher.fusionkit.core.i18n.I18nHandler;
 import de.marcandreher.fusionkit.core.i18n.I18nInfoHandler;
 import de.marcandreher.fusionkit.core.i18n.I18nSetHandler;
+import de.marcandreher.fusionkit.core.javalin.FusionJsonMapper;
+import de.marcandreher.fusionkit.core.javalin.FusionRequestLogger;
+import de.marcandreher.fusionkit.core.javalin.ProductionLevel;
 import de.marcandreher.fusionkit.core.routes.FusionDatabaseInfoHandler;
 import de.marcandreher.fusionkit.core.routes.FusionInfoHandler;
-import de.marcandreher.fusionkit.lib.freemarker.FreemarkerConfigFile;
-import de.marcandreher.fusionkit.lib.helpers.WebAppConfig;
-import de.marcandreher.fusionkit.lib.javalin.FusionRequestLogger;
-import de.marcandreher.fusionkit.lib.javalin.GlobalExceptionHandler;
-import de.marcandreher.fusionkit.lib.javalin.ProductionLevel;
-import de.marcandreher.fusionkit.util.FusionJsonMapper;
 import freemarker.template.Configuration;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
@@ -37,25 +35,28 @@ public class WebApp {
     public WebApp(WebAppConfig config) {
 
         long startTime = System.currentTimeMillis();
-        this.logger = LoggerFactory
-                .getLogger(WebApp.class + " [" + (config.getName() != null ? config.getName() : "WebApp") + "]");
+        this.logger = FusionKit.getLogger(WebApp.class, config.getName());
         this.config = config;
         try {
         
-            this.app = Javalin.create(this::configureJavalin);
+            app = Javalin.create(this::configureJavalin);
 
             if (ProductionLevel.isInDevelopment(config.getProductionLevel())) {
                 // Configure global exception handler
-                GlobalExceptionHandler exceptionHandler = GlobalExceptionHandler.create(config);
-                this.app.exception(Exception.class, exceptionHandler::handleException);
+                JavalinExceptionHandler exceptionHandler = JavalinExceptionHandler.create(config);
+                app.exception(Exception.class, exceptionHandler::handleException);
                 app.get("/fusion", new FusionInfoHandler(config));
+                
                 if(FusionKit.database != null) {
-                    app.get("/fusion/database", new FusionDatabaseInfoHandler());
+                    app.get("/fusion/database", new FusionDatabaseInfoHandler(config));
                 }
-                app.before("/*", new FusionDebugCache());
-                app.after("/*", new FusionDebugHandler());
-                app.get("/fusion/debug/", new FusionDebugAPIHandler());
-                app.get("/fusion/request/", new FusionDebugRequestAPIHandler());
+
+                if(config.isDebugger()) {
+                    app.before("/*", new FusionDebugCache());
+                    app.after("/*", new FusionDebugHandler());
+                    app.get("/fusion/debug/", new FusionDebugAPIHandler());
+                    app.get("/fusion/request/", new FusionDebugRequestAPIHandler());
+                }
             }
 
             if(config.isI18n()) {
@@ -114,10 +115,9 @@ public class WebApp {
         // Configure static files if enabled
         if (config.isStaticfiles()) {
             if (config.isStaticFilesExternal()) {
-                File staticDir = new File(config.getStaticFilesDirectory());
-                if (!staticDir.exists()) {
-                    staticDir.mkdirs();
-                }
+                FileStructureManager staticDir = new FileStructureManager(FileStructureManager.DirectoryType.PUBLIC);
+                staticDir.persist();
+
                 javalinConfig.staticFiles.add(staticFiles -> {
                     staticFiles.hostedPath = config.getStaticFilesPath();
                     staticFiles.directory = config.getStaticFilesDirectory();
@@ -142,13 +142,11 @@ public class WebApp {
         // Configure Freemarker if enabled
         if (config.isFreemarker()) {
             try {
-                File templateDir = new File(config.getTemplatesDirectory());
-                if (!templateDir.exists()) {
-                    templateDir.mkdirs();
-                }
+                FileStructureManager templateDir = new FileStructureManager(FileStructureManager.DirectoryType.TEMPLATES);
+                templateDir.persist();
 
-                FreemarkerConfigFile fmConfigFile = new FreemarkerConfigFile();
-                Configuration fmConfig = fmConfigFile.applyConfig(config, templateDir);
+                FreemarkerConfiguration fmConfigFile = new FreemarkerConfiguration();
+                Configuration fmConfig = fmConfigFile.applyConfig(config, templateDir.getDirectory());
 
                 javalinConfig.fileRenderer(new JavalinFreemarker(fmConfig));
             } catch (Exception e) {

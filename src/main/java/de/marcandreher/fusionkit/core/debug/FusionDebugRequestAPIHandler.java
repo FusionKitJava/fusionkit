@@ -2,7 +2,7 @@ package de.marcandreher.fusionkit.core.debug;
 
 import org.jetbrains.annotations.NotNull;
 
-import de.marcandreher.fusionkit.util.VersionInfo;
+import de.marcandreher.fusionkit.core.app.VersionInfo;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import lombok.Data;
