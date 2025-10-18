@@ -91,7 +91,7 @@ public class WebApp {
             fullUrl += ":" + config.getPort();
         }
 
-        logger.info(">> WebApp '{}' running on {} in {}ms", config.getName(), fullUrl, System.currentTimeMillis() - startTime);
+        logger.info(">> WebApp '{}' running on {} in <{}ms>", config.getName(), fullUrl, System.currentTimeMillis() - startTime);
     }
 
     public WebAppConfig getConfig() {

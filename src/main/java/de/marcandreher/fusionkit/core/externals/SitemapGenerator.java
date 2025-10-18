@@ -87,7 +87,7 @@ public class SitemapGenerator {
     public long write() {
         try {
             wsg.write();
-            logger.debug("Sitemap written with {} URLs in {}ms", urlCount, System.currentTimeMillis() - startTime);
+            logger.debug("Sitemap written with {} URLs in <{}ms>", urlCount, System.currentTimeMillis() - startTime);
             return System.currentTimeMillis() - startTime;
         } catch (Exception e) {
             logger.error("Error writing sitemap: {}", e.getMessage(), e);
