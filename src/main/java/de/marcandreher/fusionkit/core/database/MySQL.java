@@ -11,8 +11,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mysql.cj.jdbc.ClientPreparedStatement;
-
 import lombok.Data;
 
 @Data
@@ -86,20 +84,22 @@ public final class MySQL implements AutoCloseable {
 
 	public PreparedStatement query(String sql, Object... args) {
 		try {
+			if (currentCon == null || currentCon.isClosed()) {
+				log.error("Cannot create query - connection is null or closed");
+				return null;
+			}
+			
 			PreparedStatement stmt = currentCon.prepareStatement(sql);
-			for (int i = 0; i < args.length; i++)
+			for (int i = 0; i < args.length; i++) {
 				if (isNumeric(args[i].toString())) {
 					stmt.setInt(i + 1, Integer.parseInt(args[i].toString()));
 				} else {
 					stmt.setString(i + 1, (String) args[i]);
 				}
-
-			ClientPreparedStatement mysqlStmt = stmt.unwrap(ClientPreparedStatement.class);
-			if (mysqlStmt != null) {
-				logSQL(mysqlStmt.getPreparedSql());
-			} else {
-				logSQL(stmt.toString());
 			}
+				
+			logSQL(stmt.toString());
+			
 			
 			return stmt;
 		} catch (Exception ex) {
@@ -117,6 +117,11 @@ public final class MySQL implements AutoCloseable {
 
 	public PreparedStatement query(String sql, List<String> args) {
 		try {
+			if (currentCon == null || currentCon.isClosed()) {
+				log.error("Cannot create query - connection is null or closed");
+				return null;
+			}
+			
 			PreparedStatement stmt = currentCon.prepareStatement(sql);
 			for (int i = 0; i < args.size(); i++)
 				stmt.setString(i + 1, args.get(i));
@@ -130,31 +135,44 @@ public final class MySQL implements AutoCloseable {
 	}
 
 	public void exec(String sql, Object... args) {
-		try (PreparedStatement stmt = currentCon.prepareStatement(sql)) {
-			for (int i = 0; i < args.length; i++) {
-				if (args[i] instanceof String) {
-					stmt.setString(i + 1, (String) args[i]);
-				} else if (args[i] instanceof Integer) {
-					stmt.setInt(i + 1, (Integer) args[i]);
-				} else if (args[i] instanceof Long) {
-					stmt.setLong(i + 1, (Long) args[i]);
-				} else if (args[i] instanceof Boolean) {
-					stmt.setBoolean(i + 1, (Boolean) args[i]);
-				} else if (args[i] instanceof Double) {
-					stmt.setDouble(i + 1, (Double) args[i]);
-				} else {
-					throw new IllegalArgumentException("Unsupported parameter type: " + args[i].getClass());
-				}
+		try {
+			if (currentCon == null || currentCon.isClosed()) {
+				log.error("Cannot execute query - connection is null or closed");
+				return;
 			}
-            logSQL(stmt.toString());
-			stmt.execute();
+			
+			try (PreparedStatement stmt = currentCon.prepareStatement(sql)) {
+				for (int i = 0; i < args.length; i++) {
+					if (args[i] instanceof String) {
+						stmt.setString(i + 1, (String) args[i]);
+					} else if (args[i] instanceof Integer) {
+						stmt.setInt(i + 1, (Integer) args[i]);
+					} else if (args[i] instanceof Long) {
+						stmt.setLong(i + 1, (Long) args[i]);
+					} else if (args[i] instanceof Boolean) {
+						stmt.setBoolean(i + 1, (Boolean) args[i]);
+					} else if (args[i] instanceof Double) {
+						stmt.setDouble(i + 1, (Double) args[i]);
+					} else {
+						throw new IllegalArgumentException("Unsupported parameter type: " + args[i].getClass());
+					}
+				}
+				logSQL(stmt.toString());
+				stmt.execute();
+			}
 		} catch (Exception ex) {
-			log.error("MySQL Exec Error: " + ex.getMessage(), ex);
+			// Print last calling class
+			log.error("MySQL Exec Error: " + ex.getMessage() + " | called from " + getCaller(), ex);
 		}
 	}
 
 	public int execKeys(String sql, Object... args) {
 		try {
+			if (currentCon == null || currentCon.isClosed()) {
+				log.error("Cannot execute query - connection is null or closed");
+				return -1;
+			}
+			
 			PreparedStatement stmt = currentCon.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 			for (int i = 0; i < args.length; i++) {
 				if (args[i] instanceof String) {
@@ -174,12 +192,7 @@ public final class MySQL implements AutoCloseable {
 
 			int rowsAffected = stmt.executeUpdate();
 
-			ClientPreparedStatement mysqlStmt = stmt.unwrap(ClientPreparedStatement.class);
-			if (mysqlStmt != null) {
-				logSQL(mysqlStmt.getPreparedSql());
-			} else {
-				logSQL(stmt.toString());
-			}
+			logSQL(stmt.toString());
 
 			ResultSet rs = stmt.getGeneratedKeys();
 			if (rs.next()) {

@@ -61,6 +61,7 @@
     <toml4j.version>0.7.2</toml4j.version>
     <caffeine.version>3.2.2</caffeine.version>
     <sitemapgen4j.version>1.1.2</sitemapgen4j.version>
+    <classgraph.version>4.8.181</classgraph.version>
 
     <!-- Testing Dependencies -->
     <junit.version>4.13.1</junit.version>
@@ -172,6 +173,11 @@
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>${lombok.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.classgraph</groupId>
+      <artifactId>classgraph</artifactId>
+      <version>${classgraph.version}</version>
     </dependency>
 
     <!-- =============================================== -->

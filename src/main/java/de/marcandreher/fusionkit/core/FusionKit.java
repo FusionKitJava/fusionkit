@@ -20,6 +20,7 @@ import de.marcandreher.fusionkit.core.cmd.implementations.AppCommand;
 import de.marcandreher.fusionkit.core.config.AppConfiguration;
 import de.marcandreher.fusionkit.core.cron.FusionCron;
 import de.marcandreher.fusionkit.core.database.Database;
+import okhttp3.OkHttpClient;
 
 public class FusionKit {
 
@@ -29,6 +30,7 @@ public class FusionKit {
     protected static final ArrayList<WebApp> webApps = new ArrayList<>();
     protected static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     protected static FusionCron cron = new FusionCron();
+    protected static OkHttpClient client = new OkHttpClient.Builder().build();
     protected static CommandService commandService = new CommandService();
     protected static ClassLoader classLoader;
     public static Database database;
@@ -74,6 +76,10 @@ public class FusionKit {
 
     public static Gson getGson() {
         return gson;
+    }
+
+    public static OkHttpClient getHttpClient() {
+        return client;
     }
 
     public static FusionCron getCron() {
