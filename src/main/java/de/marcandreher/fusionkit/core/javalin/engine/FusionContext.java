@@ -1,5 +1,6 @@
 package de.marcandreher.fusionkit.core.javalin.engine;
 
+import de.marcandreher.fusionkit.core.auth.User;
 import io.javalin.http.Context;
 
 public interface FusionContext extends Context {
@@ -23,5 +24,13 @@ public interface FusionContext extends Context {
 
     default Context render(String templatePath) {
         return render(templatePath, attributeMap());
+    }
+
+    default User getUser() {
+        return sessionAttribute("user");
+    }
+
+    default boolean isLoggedIn() {
+        return getUser() != null;
     }
 }

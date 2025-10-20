@@ -6,6 +6,9 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 
 import de.marcandreher.fusionkit.core.app.FileStructureManager;
+import de.marcandreher.fusionkit.core.auth.AuthProvider;
+import de.marcandreher.fusionkit.core.auth.config.DiscordConfig;
+import de.marcandreher.fusionkit.core.auth.handlers.DiscordLoginHandler;
 import de.marcandreher.fusionkit.core.config.FreemarkerConfiguration;
 import de.marcandreher.fusionkit.core.config.WebAppConfig;
 import de.marcandreher.fusionkit.core.debug.FusionDebugAPIHandler;
@@ -66,6 +69,17 @@ public class WebApp {
                     app.after("/*", new FusionDebugHandler());
                     app.get("/fusion/debug/", new FusionDebugAPIHandler());
                     app.get("/fusion/request/", new FusionDebugRequestAPIHandler());
+                }
+            }
+
+            if(config.getAuthProvider() != AuthProvider.NONE && config.isAuth()) {
+                if(AuthProvider.DISCORD == config.getAuthProvider()) {
+                    DiscordConfig discordConfig = DiscordConfig.loadConfig();
+                    DiscordLoginHandler discordLoginHandler = new DiscordLoginHandler(this, discordConfig);
+                    discordLoginHandler.registerRoutes();
+                } else {
+                    logger.error("Unsupported AuthProvider: {}", config.getAuthProvider());
+                    System.exit(1);
                 }
             }
 

@@ -2,6 +2,8 @@ package de.marcandreher.fusionkit.core.config;
 
 import java.util.Locale;
 
+import de.marcandreher.fusionkit.core.auth.AfterLoginHandler;
+import de.marcandreher.fusionkit.core.auth.AuthProvider;
 import de.marcandreher.fusionkit.core.javalin.JavalinConfigurator;
 import de.marcandreher.fusionkit.core.javalin.ProductionLevel;
 import lombok.AllArgsConstructor;
@@ -54,7 +56,16 @@ public class WebAppConfig {
     private String templatesEncoding = "UTF-8";
     @Builder.Default
     private boolean templatesAutoReload = true;
-    
+
+    @Builder.Default
+    private boolean auth = false;
+    @Builder.Default
+    private AuthProvider authProvider = AuthProvider.NONE;
+    @Builder.Default
+    private long authSessionInterval = 24 * 60 * 60 * 1000; // 24 hours
+    @Builder.Default
+    private AfterLoginHandler authHandler = null;
+
     // Logging configuration
     @Builder.Default
     private boolean requestLogging = true;
