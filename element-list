@@ -1,5 +1,8 @@
 de.marcandreher.fusionkit.core
 de.marcandreher.fusionkit.core.app
+de.marcandreher.fusionkit.core.auth
+de.marcandreher.fusionkit.core.auth.config
+de.marcandreher.fusionkit.core.auth.handlers
 de.marcandreher.fusionkit.core.cmd
 de.marcandreher.fusionkit.core.cmd.implementations
 de.marcandreher.fusionkit.core.config
