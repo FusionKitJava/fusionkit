@@ -33,8 +33,8 @@ public class AppConfiguration {
         logger.info("Loaded configuration from /.config/{}", configFile.getName());
     }
 
-    public Object getModel() {
-        return config;
+    public <T> T getModel(Class<T> clazz) {
+        return clazz.cast(config);
     }
 
 

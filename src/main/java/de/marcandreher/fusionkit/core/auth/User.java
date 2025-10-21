@@ -1,11 +1,16 @@
 package de.marcandreher.fusionkit.core.auth;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import lombok.Data;
 
 @Data
 public class User {
-    public String id;
-    public String username;
-    public String avatar;
-    public String email;
+    private String id;
+    private String username;
+    private String avatar;
+    private String email;
+
+    private Map<String, Object> data = new ConcurrentHashMap<>();
 }
