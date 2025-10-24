@@ -33,6 +33,7 @@
     <logger name="org.eclipse.jetty.http" level="OFF" additivity="false" />
     <logger name="org.eclipse.jetty.io" level="OFF" additivity="false" />
     <logger name="org.eclipse.jetty.util" level="OFF" additivity="false" />
+    <logger name="net.dv8tion.jda" level="OFF" additivity="false" />
     <logger name="io.javalin.Javalin" level="OFF" additivity="false" />
     <logger name="com.zaxxer.hikari" level="ERROR" additivity="true" />
 

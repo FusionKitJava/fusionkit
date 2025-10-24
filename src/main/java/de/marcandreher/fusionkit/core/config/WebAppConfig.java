@@ -66,6 +66,9 @@ public class WebAppConfig {
     @Builder.Default
     private AfterLoginHandler authHandler = null;
 
+    @Builder.Default
+    private boolean metrics = false;
+
     // Logging configuration
     @Builder.Default
     private boolean requestLogging = true;
