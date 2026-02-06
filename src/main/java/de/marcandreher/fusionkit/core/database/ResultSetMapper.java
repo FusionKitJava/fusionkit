@@ -16,8 +16,6 @@ public class ResultSetMapper {
 
             for (Field field : clazz.getDeclaredFields()) {
                 Column col = field.getAnnotation(Column.class);
-                if (col == null) continue;
-
                 Object value = rs.getObject(col.value());
                 if (value != null) {
                     field.setAccessible(true);
