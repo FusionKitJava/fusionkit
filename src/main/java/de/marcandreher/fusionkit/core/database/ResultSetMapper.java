@@ -16,14 +16,18 @@ public class ResultSetMapper {
 
             for (Field field : clazz.getDeclaredFields()) {
                 Column col = field.getAnnotation(Column.class);
-                Object value = rs.getObject(col.value());
-                if (value != null) {
-                    field.setAccessible(true);
-                    if ((field.getType() == boolean.class || field.getType() == Boolean.class) && value instanceof Number) {
-                        field.set(instance, ((Number) value).intValue() != 0);
-                    } else {
-                        field.set(instance, value);
+                try {
+                    Object value = rs.getObject(col.value());
+                    if (value != null) {
+                        field.setAccessible(true);
+                        if ((field.getType() == boolean.class || field.getType() == Boolean.class) && value instanceof Number) {
+                            field.set(instance, ((Number) value).intValue() != 0);
+                        } else {
+                            field.set(instance, value);
+                        }
                     }
+                } catch (SQLException e) {
+                    // Ignore columns that don't exist in ResultSet
                 }
             }
             return instance;
