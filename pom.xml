@@ -56,6 +56,7 @@
     <!-- Utility Dependencies -->
     <jline.version>3.30.6</jline.version>
     <gson.version>2.13.2</gson.version>
+    <slf4j.version>2.0.16</slf4j.version>
     <logback.version>1.5.27</logback.version>
     <lombok.version>1.18.42</lombok.version>
     <toml4j.version>0.7.2</toml4j.version>
@@ -137,6 +138,11 @@
     <!-- =============================================== -->
     <!-- Logging Dependencies -->
     <!-- =============================================== -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
