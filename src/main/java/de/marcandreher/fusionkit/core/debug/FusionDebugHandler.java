@@ -52,7 +52,13 @@ public class FusionDebugHandler implements Handler {
             .setPrettyPrinting()
             .create();
         try {
-            FusionDebugAPIHandler.cache.put(ctx.attribute("debugKey"), gson.toJson(safeAttributes));
+            String debugKey = ctx.attribute("debugKey");
+            if (debugKey != null) {
+                String jsonResult = gson.toJson(safeAttributes);
+                if (jsonResult != null) {
+                    FusionDebugAPIHandler.cache.put(debugKey, jsonResult);
+                }
+            }
         } catch (Exception e) {
             // Fallback to simple string representation if JSON serialization fails
             ctx.attribute("debug", "Debug serialization failed: " + e.getMessage());
