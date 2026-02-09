@@ -109,6 +109,11 @@ public class FusionKit {
     }
 
     public static void registerCommand(Class<? extends Command> commandClass) {
+
+        if(commandService == null) {
+            return;
+        }
+
         Command commandInstance;
         try {
             commandInstance = commandClass.getDeclaredConstructor().newInstance();

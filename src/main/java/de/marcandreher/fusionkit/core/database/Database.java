@@ -32,6 +32,7 @@ public class Database {
         }
         this.hikariConfig = new HikariConfig();
         FusionKit.database = this;
+        
         FusionKit.registerCommand(DatabaseCommand.class);
     }
 
