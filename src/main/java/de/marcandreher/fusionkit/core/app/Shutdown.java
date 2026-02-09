@@ -34,8 +34,10 @@ public class Shutdown extends FusionKit {
                     log("Closing database connections...");
                     FusionKit.database.shutdown();
                 }
-
-                FusionKit.commandService.interrupt();
+                if(FusionKit.commandService != null) {
+                    log("Shutting down command service...");
+                    FusionKit.commandService.interrupt();
+                }
 
                 log("FusionKit shutdown complete. in <" + (System.currentTimeMillis() - startTime) + " ms>");
                 FusionKit.logger.info("FusionKit shutdown complete.");

@@ -1,4 +1,11 @@
 <configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <charset>UTF-8</charset>
+            <pattern>%highlight(%-5level) %yellow(%d{yyyy-MM-dd HH:mm:ss}) %magenta(%logger{36}) - %msg %red(%ex{short})</pattern>
+        </encoder>
+    </appender>
+
     <appender name="JLINE" class="de.marcandreher.fusionkit.core.logger.JLineConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <charset>UTF-8</charset>
@@ -37,8 +44,8 @@
     <logger name="io.javalin.Javalin" level="OFF" additivity="false" />
     <logger name="com.zaxxer.hikari" level="ERROR" additivity="true" />
 
-    <root>
-        <appender-ref ref="JLINE"/>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ROLLING_FILE" />
     </root>
 </configuration>
