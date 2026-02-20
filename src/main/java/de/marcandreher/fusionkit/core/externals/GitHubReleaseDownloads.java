@@ -31,70 +31,90 @@ public class GitHubReleaseDownloads {
     private final String OWNER;
     private final String REPO;
     private final String API_URL;
+    private final String ALL_RELEASES_API_URL;
 
     public GitHubReleaseDownloads(String owner, String repo) {
         this.OWNER = owner;
         this.REPO = repo;
         this.API_URL = "https://api.github.com/repos/" + OWNER + "/" + REPO + "/releases/latest";
+        this.ALL_RELEASES_API_URL = "https://api.github.com/repos/" + OWNER + "/" + REPO + "/releases";
     }
 
+
+    /**
+     * Returns the total download count for all releases of the repository.
+     */
     public long getTotalDownloadsForRelease() {
         final String key = OWNER + "/" + REPO;
-        // Use cache: compute if absent
         try {
             return cache.get(key, k -> {
                 Request request = new Request.Builder()
-                        .url(API_URL)
+                        .url(ALL_RELEASES_API_URL)
                         .header("Accept", "application/vnd.github+json")
                         .build();
-
                 try (Response response = client.newCall(request).execute()) {
                     if (response.isSuccessful()) {
                         String json = response.body().string();
-                        return extractDownloadCount(json);
+                        return extractDownloadCountAllReleases(json);
                     } else {
-                        logger.error("Failed to fetch release data for {}: {}", key, response.message());
+                        logger.error("Failed to fetch releases data for {}: {}", key, response.message());
                         return 0L;
                     }
                 } catch (IOException e) {
-                    logger.error("IOException occurred while fetching release data for {}: {}", key, e.getMessage());
+                    logger.error("IOException occurred while fetching releases data for {}: {}", key, e.getMessage());
                     return 0L;
                 }
             });
         } catch (RuntimeException e) {
-            // Caffeine may wrap exceptions in RuntimeException; fallback to direct fetch
             e.printStackTrace();
             // fallback: direct fetch
             Request request = new Request.Builder()
-                    .url(API_URL)
+                    .url(ALL_RELEASES_API_URL)
                     .header("Accept", "application/vnd.github+json")
                     .build();
-
             try (Response response = client.newCall(request).execute()) {
                 if (response.isSuccessful()) {
                     String json = response.body().string();
-                    return extractDownloadCount(json);
+                    return extractDownloadCountAllReleases(json);
                 } else {
-                    logger.error("Failed to fetch release data for {}: {}", key, response.message());
+                    logger.error("Failed to fetch releases data for {}: {}", key, response.message());
                     return 0;
                 }
             } catch (IOException ex) {
-                logger.error("IOException occurred while fetching release data for {}: {}", key, ex.getMessage());
+                logger.error("IOException occurred while fetching releases data for {}: {}", key, ex.getMessage());
                 return 0;
             }
         }
     }
 
+    // For single release (kept for reference, not used)
     private long extractDownloadCount(String jsonInput) {
         long totalDownloads = 0;
         JsonObject json = JsonParser.parseString(jsonInput).getAsJsonObject();
         JsonArray assets = json.getAsJsonArray("assets");
-
         for (JsonElement element : assets) {
-                JsonObject asset = element.getAsJsonObject();
-                int count = asset.get("download_count").getAsInt();
-                totalDownloads += count;
+            JsonObject asset = element.getAsJsonObject();
+            int count = asset.get("download_count").getAsInt();
+            totalDownloads += count;
+        }
+        return totalDownloads;
+    }
+
+    // For all releases
+    private long extractDownloadCountAllReleases(String jsonInput) {
+        long totalDownloads = 0;
+        JsonArray releases = JsonParser.parseString(jsonInput).getAsJsonArray();
+        for (JsonElement releaseElem : releases) {
+            JsonObject release = releaseElem.getAsJsonObject();
+            JsonArray assets = release.getAsJsonArray("assets");
+            if (assets != null) {
+                for (JsonElement assetElem : assets) {
+                    JsonObject asset = assetElem.getAsJsonObject();
+                    int count = asset.get("download_count").getAsInt();
+                    totalDownloads += count;
+                }
             }
+        }
         return totalDownloads;
     }
 }
