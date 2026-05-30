@@ -6,3 +6,4 @@
 
 *.log
 *.class
+.vscode/settings.json
