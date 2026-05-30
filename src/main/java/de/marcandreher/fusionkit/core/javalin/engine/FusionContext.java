@@ -29,6 +29,11 @@ public interface FusionContext extends Context {
     }
 
     default User getUser() {
+        User user = attribute("user");
+        if (user != null) {
+            return user;
+        }
+
         return sessionAttribute("user");
     }
 

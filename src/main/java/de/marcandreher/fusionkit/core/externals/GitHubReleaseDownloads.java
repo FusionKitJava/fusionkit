@@ -30,13 +30,11 @@ public class GitHubReleaseDownloads {
 
     private final String OWNER;
     private final String REPO;
-    private final String API_URL;
     private final String ALL_RELEASES_API_URL;
 
     public GitHubReleaseDownloads(String owner, String repo) {
         this.OWNER = owner;
         this.REPO = repo;
-        this.API_URL = "https://api.github.com/repos/" + OWNER + "/" + REPO + "/releases/latest";
         this.ALL_RELEASES_API_URL = "https://api.github.com/repos/" + OWNER + "/" + REPO + "/releases";
     }
 
@@ -85,19 +83,6 @@ public class GitHubReleaseDownloads {
                 return 0;
             }
         }
-    }
-
-    // For single release (kept for reference, not used)
-    private long extractDownloadCount(String jsonInput) {
-        long totalDownloads = 0;
-        JsonObject json = JsonParser.parseString(jsonInput).getAsJsonObject();
-        JsonArray assets = json.getAsJsonArray("assets");
-        for (JsonElement element : assets) {
-            JsonObject asset = element.getAsJsonObject();
-            int count = asset.get("download_count").getAsInt();
-            totalDownloads += count;
-        }
-        return totalDownloads;
     }
 
     // For all releases

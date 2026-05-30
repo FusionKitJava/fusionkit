@@ -12,6 +12,7 @@ import de.marcandreher.fusionkit.core.auth.AuthProvider;
 import de.marcandreher.fusionkit.core.auth.LoginHandler;
 import de.marcandreher.fusionkit.core.auth.User;
 import de.marcandreher.fusionkit.core.auth.config.DiscordConfig;
+import de.marcandreher.fusionkit.core.auth.store.AuthSessionStore;
 import de.marcandreher.fusionkit.core.config.WebAppConfig;
 import de.marcandreher.fusionkit.core.javalin.ProductionLevel;
 import okhttp3.FormBody;
@@ -28,10 +29,12 @@ public class DiscordLoginHandler implements LoginHandler {
     private WebAppConfig config;
     private WebApp app;
     private String redirectUri;
+    private AuthSessionStore sessionStore;
 
     public DiscordLoginHandler(WebApp app, DiscordConfig discordConfig) {
         this.config = app.getConfig();
         this.discordConfig = discordConfig;
+        this.sessionStore = config.getAuthSessionStore();
 
         if(ProductionLevel.isInDevelopment(config.getProductionLevel())) {
             this.redirectUri = config.getDomain() + ":" + config.getPort() + "/auth/discord/callback";
@@ -47,7 +50,7 @@ public class DiscordLoginHandler implements LoginHandler {
         FusionKit.getLogger(DiscordLoginHandler.class).info("Registering Discord OAuth2 login handler");
         app.getApp().before("/*", ctx -> {
             // Make user available in all templates
-            ctx.attribute("user", ctx.sessionAttribute("user"));
+            ctx.attribute("user", sessionStore.getUser(ctx));
             ctx.attribute("url", getLoginUrl(redirectUri, "state123"));
         });
         app.getApp().get("/auth/discord/callback", ctx -> {
@@ -72,12 +75,12 @@ public class DiscordLoginHandler implements LoginHandler {
             config.getAuthHandler().handle(user, ctx);
 
             // Save user in session
-            ctx.sessionAttribute("user", user);
+            sessionStore.setUser(ctx, user);
 
             ctx.redirect("/");
         });
         app.getApp().get("/logout", ctx -> {
-            ctx.sessionAttribute("user", null);
+            sessionStore.clear(ctx);
             ctx.redirect("/");
         });
     }

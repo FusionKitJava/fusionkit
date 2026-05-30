@@ -2,9 +2,8 @@ package de.marcandreher.fusionkit.core.auth.config;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-
-import com.google.gson.JsonSyntaxException;
+import com.moandjiezana.toml.Toml;
+import com.moandjiezana.toml.TomlWriter;
 
 import de.marcandreher.fusionkit.core.FusionKit;
 import lombok.Data;
@@ -33,18 +32,19 @@ public class DiscordConfig {
                 }
             }
 
-            File configFile = new File(configDir, "discord.json");
+            File configFile = new File(configDir, "discord.toml");
             if (configFile.exists()) {
                 FusionKit.getLogger(DiscordConfig.class).debug("Config file found. Reading: " + configFile.getAbsolutePath());
-                return FusionKit.getGson().fromJson(Files.readString(configFile.toPath()), DiscordConfig.class);
+                Toml toml = new Toml().read(configFile);
+                DiscordConfig config = toml.to(DiscordConfig.class);
+                return config != null ? config : createDefaultConfig();
             } else {
                 FusionKit.getLogger(DiscordConfig.class).debug("Config file not found. Creating default config: " + configFile.getAbsolutePath());
                 DiscordConfig defaultConfig = createDefaultConfig();
-                Files.writeString(configFile.toPath(), FusionKit.getGson().toJson(defaultConfig));
+                TomlWriter writer = new TomlWriter();
+                writer.write(defaultConfig, configFile);
                 return defaultConfig;
             }
-        } catch (JsonSyntaxException e) {
-            FusionKit.getLogger(DiscordConfig.class).error("JSON syntax error while loading DiscordConfig", e);
         } catch (IOException e) {
             FusionKit.getLogger(DiscordConfig.class).error("IO error while loading DiscordConfig", e);
         } catch (Exception e) {

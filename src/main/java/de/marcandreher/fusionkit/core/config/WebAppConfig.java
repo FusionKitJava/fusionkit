@@ -4,6 +4,8 @@ import java.util.Locale;
 
 import de.marcandreher.fusionkit.core.auth.AfterLoginHandler;
 import de.marcandreher.fusionkit.core.auth.AuthProvider;
+import de.marcandreher.fusionkit.core.auth.store.AuthSessionStore;
+import de.marcandreher.fusionkit.core.auth.store.SessionAttributeAuthSessionStore;
 import de.marcandreher.fusionkit.core.javalin.JavalinConfigurator;
 import de.marcandreher.fusionkit.core.javalin.ProductionLevel;
 import lombok.AllArgsConstructor;
@@ -65,6 +67,8 @@ public class WebAppConfig {
     private long authSessionInterval = 24 * 60 * 60 * 1000; // 24 hours
     @Builder.Default
     private AfterLoginHandler authHandler = null;
+    @Builder.Default
+    private AuthSessionStore authSessionStore = new SessionAttributeAuthSessionStore();
 
     @Builder.Default
     private boolean metrics = false;
