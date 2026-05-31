@@ -10,4 +10,5 @@ public interface AuthSessionStore {
     void setUser(Context ctx, User user);
 
     void clear(Context ctx);
+    
 }

@@ -1,6 +1,8 @@
 package de.marcandreher.fusionkit.core.config;
 
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Set;
 
 import de.marcandreher.fusionkit.core.auth.AfterLoginHandler;
 import de.marcandreher.fusionkit.core.auth.AuthProvider;
@@ -63,6 +65,8 @@ public class WebAppConfig {
     private boolean auth = false;
     @Builder.Default
     private AuthProvider authProvider = AuthProvider.NONE;
+    @Builder.Default
+    private Set<AuthProvider> authProviders = new LinkedHashSet<>();
     @Builder.Default
     private long authSessionInterval = 24 * 60 * 60 * 1000; // 24 hours
     @Builder.Default

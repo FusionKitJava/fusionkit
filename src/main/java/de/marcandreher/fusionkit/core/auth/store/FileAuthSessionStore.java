@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.moandjiezana.toml.Toml;
 import com.moandjiezana.toml.TomlWriter;
 
+import de.marcandreher.fusionkit.core.app.FileStructureManager;
 import de.marcandreher.fusionkit.core.auth.User;
 import io.javalin.http.Context;
 
@@ -20,7 +21,7 @@ public class FileAuthSessionStore implements AuthSessionStore {
     private final TomlWriter writer = new TomlWriter();
 
     public FileAuthSessionStore(File sessionDirectory) {
-        this.sessionDirectory = sessionDirectory;
+        this.sessionDirectory = new File(FileStructureManager.DirectoryType.DATA.getDirectoryName(), sessionDirectory.getName());
     }
 
     @Override

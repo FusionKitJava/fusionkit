@@ -42,7 +42,7 @@ public class FileStructureManager {
     }
 
     public void persist() {
-        java.io.File dir = new java.io.File(type.getDirectoryName());
+        File dir = new File(type.getDirectoryName());
         if (!dir.exists()) {
             boolean created = dir.mkdirs();
             if (created) {

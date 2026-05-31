@@ -7,8 +7,8 @@ import org.slf4j.Logger;
 
 import de.marcandreher.fusionkit.core.app.FileStructureManager;
 import de.marcandreher.fusionkit.core.auth.AuthProvider;
-import de.marcandreher.fusionkit.core.auth.config.DiscordConfig;
-import de.marcandreher.fusionkit.core.auth.handlers.DiscordLoginHandler;
+import de.marcandreher.fusionkit.core.auth.AuthProviderRegistry;
+import de.marcandreher.fusionkit.core.auth.LoginHandler;
 import de.marcandreher.fusionkit.core.config.FreemarkerConfiguration;
 import de.marcandreher.fusionkit.core.config.WebAppConfig;
 import de.marcandreher.fusionkit.core.debug.FusionDebugAPIHandler;
@@ -72,14 +72,28 @@ public class WebApp {
                 }
             }
 
-            if(config.getAuthProvider() != AuthProvider.NONE && config.isAuth()) {
-                if(AuthProvider.DISCORD == config.getAuthProvider()) {
-                    DiscordConfig discordConfig = DiscordConfig.loadConfig();
-                    DiscordLoginHandler discordLoginHandler = new DiscordLoginHandler(this, discordConfig);
-                    discordLoginHandler.registerRoutes();
-                } else {
-                    logger.error("Unsupported AuthProvider: {}", config.getAuthProvider());
-                    System.exit(1);
+            if (config.isAuth()) {
+                if (config.getAuthProviders() != null && !config.getAuthProviders().isEmpty()) {
+                    for (AuthProvider provider : config.getAuthProviders()) {
+                        if (provider == null || provider == AuthProvider.NONE) {
+                            continue;
+                        }
+                        LoginHandler loginHandler = AuthProviderRegistry.createHandler(provider, this);
+                        if (loginHandler == null) {
+                            logger.error("Unsupported AuthProvider: {}", provider);
+                            System.exit(1);
+                            return;
+                        }
+                        loginHandler.registerRoutes();
+                    }
+                } else if (config.getAuthProvider() != AuthProvider.NONE) {
+                    LoginHandler loginHandler = AuthProviderRegistry.createHandler(config.getAuthProvider(), this);
+                    if (loginHandler == null) {
+                        logger.error("Unsupported AuthProvider: {}", config.getAuthProvider());
+                        System.exit(1);
+                        return;
+                    }
+                    loginHandler.registerRoutes();
                 }
             }
 
