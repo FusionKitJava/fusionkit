@@ -22,6 +22,7 @@ import de.marcandreher.fusionkit.core.auth.config.SteamConfig;
 import de.marcandreher.fusionkit.core.auth.store.AuthSessionStore;
 import de.marcandreher.fusionkit.core.config.WebAppConfig;
 import de.marcandreher.fusionkit.core.javalin.ProductionLevel;
+import io.javalin.config.JavalinConfig;
 import io.javalin.http.Context;
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
@@ -38,13 +39,11 @@ public class SteamLoginHandler implements LoginHandler {
 
     private final SteamConfig steamConfig;
     private final WebAppConfig config;
-    private final WebApp app;
     private final AuthSessionStore sessionStore;
     private final String redirectUri;
     private final String realm;
 
     public SteamLoginHandler(WebApp app, SteamConfig steamConfig) {
-        this.app = app;
         this.config = app.getConfig();
         this.sessionStore = config.getAuthSessionStore();
         this.steamConfig = steamConfig;
@@ -53,9 +52,9 @@ public class SteamLoginHandler implements LoginHandler {
     }
 
     @Override
-    public void registerRoutes() {
+    public void registerRoutes(JavalinConfig javalinConfig) {
         FusionKit.getLogger(SteamLoginHandler.class).info("Registering Steam OpenID login handler");
-        app.getApp().before("/*", ctx -> {
+        javalinConfig.routes.before("/*", ctx -> {
             ctx.attribute("user", sessionStore.getUser(ctx));
             Map<String, String> authUrls = ctx.attribute("authUrls");
             if (authUrls == null) {
@@ -67,7 +66,7 @@ public class SteamLoginHandler implements LoginHandler {
                 ctx.attribute("url", authUrls.get("steam"));
             }
         });
-        app.getApp().get("/auth/steam/callback", ctx -> {
+        javalinConfig.routes.get("/auth/steam/callback", ctx -> {
             if (!verifyOpenId(ctx)) {
                 ctx.result("Steam OpenID verification failed");
                 return;
@@ -98,7 +97,7 @@ public class SteamLoginHandler implements LoginHandler {
             sessionStore.setUser(ctx, user);
             ctx.redirect("/");
         });
-        AuthRouteRegistrar.registerLogout(app, sessionStore);
+        AuthRouteRegistrar.registerLogout(javalinConfig, sessionStore);
     }
 
     @Override

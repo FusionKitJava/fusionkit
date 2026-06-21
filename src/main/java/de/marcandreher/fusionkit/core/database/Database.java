@@ -90,7 +90,7 @@ public class Database {
             System.exit(0);
         }
 
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection _ = dataSource.getConnection()) {
             logger.info("Connected to Database (" + url + ")");
         } catch (SQLException e) {
             logger.error("Error while connecting to MySQL database " + e.getMessage());

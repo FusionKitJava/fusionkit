@@ -18,6 +18,7 @@ import de.marcandreher.fusionkit.core.auth.config.OAuth2ProviderConfig;
 import de.marcandreher.fusionkit.core.auth.store.AuthSessionStore;
 import de.marcandreher.fusionkit.core.config.WebAppConfig;
 import de.marcandreher.fusionkit.core.javalin.ProductionLevel;
+import io.javalin.config.JavalinConfig;
 import okhttp3.FormBody;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -70,9 +71,9 @@ public abstract class OAuth2LoginHandler implements LoginHandler {
     }
 
     @Override
-    public void registerRoutes() {
+    public void registerRoutes(JavalinConfig javalinConfig) {
         FusionKit.getLogger(getClass()).info("Registering {} OAuth2 login handler", getProviderName());
-        app.getApp().before("/*", ctx -> {
+        javalinConfig.routes.before("/*", ctx -> {
             ctx.attribute("user", sessionStore.getUser(ctx));
             Map<String, String> authUrls = ctx.attribute("authUrls");
             if (authUrls == null) {
@@ -84,7 +85,7 @@ public abstract class OAuth2LoginHandler implements LoginHandler {
                 ctx.attribute("url", authUrls.get(getProviderId()));
             }
         });
-        app.getApp().get(getCallbackPath(), ctx -> {
+        javalinConfig.routes.get(getCallbackPath(), ctx -> {
             String code = ctx.queryParam("code");
             if (code == null) {
                 ctx.result("Missing code");
@@ -115,7 +116,7 @@ public abstract class OAuth2LoginHandler implements LoginHandler {
                 ctx.result("OAuth2 callback failed");
             }
         });
-        AuthRouteRegistrar.registerLogout(app, sessionStore);
+        AuthRouteRegistrar.registerLogout(javalinConfig, sessionStore);
     }
 
     @Override
