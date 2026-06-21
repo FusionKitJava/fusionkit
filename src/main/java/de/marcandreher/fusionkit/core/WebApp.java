@@ -1,6 +1,7 @@
 package de.marcandreher.fusionkit.core;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
@@ -27,6 +28,7 @@ import de.marcandreher.fusionkit.core.routes.FusionInfoHandler;
 import freemarker.template.Configuration;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
+import io.javalin.config.RoutesConfig;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.rendering.template.JavalinFreemarker;
 
@@ -36,7 +38,7 @@ public class WebApp {
     private WebAppConfig config;
     private Javalin app;
 
-    public WebApp(WebAppConfig config) {
+    public WebApp(Consumer<RoutesConfig> router, WebAppConfig config) {
 
         long startTime = System.currentTimeMillis();
         this.logger = FusionKit.getLogger(WebApp.class, config.getName());
@@ -45,68 +47,29 @@ public class WebApp {
             app = Javalin.create(javalinConfig -> {
                 // Configure custom thread pool name for Jetty
                 javalinConfig.jetty.modifyServer(server -> {
-                    
+
                     if (server.getThreadPool() instanceof QueuedThreadPool queuedThreadPool) {
                         queuedThreadPool.setName("FK-WebApp-" + config.getName());
                     }
                 });
+                
                 // Apply other configurations
                 configureJavalin(javalinConfig);
+
+                if (ProductionLevel.isInDevelopment(config.getProductionLevel())) {
+                    setupDevEnv(javalinConfig);
+                }
+
+                if (config.isI18n()) {
+                    setupLocalization(javalinConfig);
+                }
+
+                if (config.isAuth()) {
+                    setupAuth(javalinConfig);
+                }
+
+                router.accept(javalinConfig.routes);
             });
-
-            if (ProductionLevel.isInDevelopment(config.getProductionLevel())) {
-                // Configure global exception handler
-                JavalinExceptionHandler exceptionHandler = JavalinExceptionHandler.create(config);
-                app.exception(Exception.class, exceptionHandler::handleException);
-                app.get("/fusion", new FusionInfoHandler(config));
-                
-                if(FusionKit.database != null) {
-                    app.get("/fusion/database", new FusionDatabaseInfoHandler(config));
-                }
-
-                if(config.isDebugger()) {
-                    app.before("/*", new FusionDebugCache());
-                    app.after("/*", new FusionDebugHandler());
-                    app.get("/fusion/debug/", new FusionDebugAPIHandler());
-                    app.get("/fusion/request/", new FusionDebugRequestAPIHandler());
-                }
-            }
-
-            if (config.isAuth()) {
-                if (config.getAuthProviders() != null && !config.getAuthProviders().isEmpty()) {
-                    for (AuthProvider provider : config.getAuthProviders()) {
-                        if (provider == null || provider == AuthProvider.NONE) {
-                            continue;
-                        }
-                        LoginHandler loginHandler = AuthProviderRegistry.createHandler(provider, this);
-                        if (loginHandler == null) {
-                            logger.error("Unsupported AuthProvider: {}", provider);
-                            System.exit(1);
-                            return;
-                        }
-                        loginHandler.registerRoutes();
-                    }
-                } else if (config.getAuthProvider() != AuthProvider.NONE) {
-                    LoginHandler loginHandler = AuthProviderRegistry.createHandler(config.getAuthProvider(), this);
-                    if (loginHandler == null) {
-                        logger.error("Unsupported AuthProvider: {}", config.getAuthProvider());
-                        System.exit(1);
-                        return;
-                    }
-                    loginHandler.registerRoutes();
-                }
-            }
-
-            if(config.isI18n()) {
-                if(FusionKit.getClassLoader() == null) {
-                    logger.error("ClassLoader not set in FusionKit. Please set it before using i18n in WebApp.");
-                    System.exit(1);
-                }
-
-                this.app.before("/*", new I18nHandler(FusionKit.getClassLoader(), config));
-                this.app.get("/i18n/info", new I18nInfoHandler());
-                this.app.post("/i18n/set", new I18nSetHandler());
-            }
 
             this.app.start(config.getPort());
         } catch (Exception e) {
@@ -119,7 +82,62 @@ public class WebApp {
             fullUrl += ":" + config.getPort();
         }
 
-        logger.info(">> WebApp '{}' running on {} in <{}ms>", config.getName(), fullUrl, System.currentTimeMillis() - startTime);
+        logger.info(">> WebApp '{}' running on {} in <{}ms>", config.getName(), fullUrl,
+                System.currentTimeMillis() - startTime);
+    }
+
+    private void setupAuth(JavalinConfig javalinConfig) {
+        if (config.getAuthProviders() != null && !config.getAuthProviders().isEmpty()) {
+            for (AuthProvider provider : config.getAuthProviders()) {
+                if (provider == null || provider == AuthProvider.NONE) {
+                    continue;
+                }
+                LoginHandler loginHandler = AuthProviderRegistry.createHandler(provider, this);
+                if (loginHandler == null) {
+                    logger.error("Unsupported AuthProvider: {}", provider);
+                    System.exit(1);
+                    return;
+                }
+                loginHandler.registerRoutes(javalinConfig);
+            }
+        } else if (config.getAuthProvider() != AuthProvider.NONE) {
+            LoginHandler loginHandler = AuthProviderRegistry.createHandler(config.getAuthProvider(), this);
+            if (loginHandler == null) {
+                logger.error("Unsupported AuthProvider: {}", config.getAuthProvider());
+                System.exit(1);
+                return;
+            }
+            loginHandler.registerRoutes(javalinConfig);
+        }
+    }
+
+    private void setupLocalization(JavalinConfig javalinConfig) {
+        if (FusionKit.getClassLoader() == null) {
+            logger.error("ClassLoader not set in FusionKit. Please set it before using i18n in WebApp.");
+            System.exit(1);
+        }
+
+        javalinConfig.routes.before("/*", new I18nHandler(FusionKit.getClassLoader(), config));
+        javalinConfig.routes.get("/i18n/info", new I18nInfoHandler());
+        javalinConfig.routes.post("/i18n/set", new I18nSetHandler());
+    }
+
+    private void setupDevEnv(JavalinConfig javalinConfig) {
+        // Configure global exception handler
+        JavalinExceptionHandler exceptionHandler = JavalinExceptionHandler.create(config);
+        javalinConfig.routes.exception(Exception.class, exceptionHandler::handleException);
+        javalinConfig.routes.get("/fusion", new FusionInfoHandler(config));
+
+        if (FusionKit.database != null) {
+            javalinConfig.routes.get("/fusion/database", new FusionDatabaseInfoHandler(config));
+        }
+
+        if (config.isDebugger()) {
+            javalinConfig.routes.before("/*", new FusionDebugCache());
+            javalinConfig.routes.after("/*", new FusionDebugHandler());
+            javalinConfig.routes.get("/fusion/debug/", new FusionDebugAPIHandler());
+            javalinConfig.routes.get("/fusion/request/", new FusionDebugRequestAPIHandler());
+        }
     }
 
     public WebAppConfig getConfig() {
@@ -128,7 +146,7 @@ public class WebApp {
 
     private void configureJavalin(JavalinConfig javalinConfig) {
         // Configure server settings
-        javalinConfig.showJavalinBanner = config.isShowBanner();
+        javalinConfig.startup.showJavalinBanner = config.isShowBanner();
         javalinConfig.http.maxRequestSize = config.getMaxRequestSize();
 
         javalinConfig.jsonMapper(new FusionJsonMapper());
@@ -161,7 +179,7 @@ public class WebApp {
                     staticFiles.directory = config.getStaticFilesDirectory();
                     staticFiles.location = Location.EXTERNAL;
                     staticFiles.headers = Map.of(
-                        "Cache-Control", "public, max-age=31536000" // 1 year cache
+                            "Cache-Control", "public, max-age=31536000" // 1 year cache
                     );
 
                 });
@@ -172,7 +190,7 @@ public class WebApp {
                     staticFiles.directory = config.getStaticFilesDirectory();
                     staticFiles.location = Location.CLASSPATH;
                     staticFiles.headers = Map.of(
-                        "Cache-Control", "public, max-age=31536000" // 1 year cache
+                            "Cache-Control", "public, max-age=31536000" // 1 year cache
                     );
                 });
             }
@@ -180,7 +198,8 @@ public class WebApp {
         // Configure Freemarker if enabled
         if (config.isFreemarker()) {
             try {
-                FileStructureManager templateDir = new FileStructureManager(FileStructureManager.DirectoryType.TEMPLATES);
+                FileStructureManager templateDir = new FileStructureManager(
+                        FileStructureManager.DirectoryType.TEMPLATES);
                 templateDir.persist();
 
                 FreemarkerConfiguration fmConfigFile = new FreemarkerConfiguration();
@@ -196,7 +215,7 @@ public class WebApp {
             javalinConfig.bundledPlugins.enableRouteOverview("/routes");
         }
 
-        if(config.getJavalinConfigurator() != null) {
+        if (config.getJavalinConfigurator() != null) {
             config.getJavalinConfigurator().configure(javalinConfig);
         }
 

@@ -2,8 +2,8 @@ package de.marcandreher.fusionkit.core.auth;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import de.marcandreher.fusionkit.core.WebApp;
 import de.marcandreher.fusionkit.core.auth.store.AuthSessionStore;
+import io.javalin.config.JavalinConfig;
 
 public final class AuthRouteRegistrar {
 
@@ -12,11 +12,11 @@ public final class AuthRouteRegistrar {
     private AuthRouteRegistrar() {
     }
 
-    public static void registerLogout(WebApp app, AuthSessionStore sessionStore) {
+    public static void registerLogout(JavalinConfig javalinConfig, AuthSessionStore sessionStore) {
         if (!LOGOUT_REGISTERED.compareAndSet(false, true)) {
             return;
         }
-        app.getApp().get("/logout", ctx -> {
+        javalinConfig.routes.get("/logout", ctx -> {
             sessionStore.clear(ctx);
             ctx.redirect("/");
         });
