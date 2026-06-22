@@ -9,8 +9,8 @@ import java.time.format.DateTimeFormatter;
 import org.jetbrains.annotations.NotNull;
 
 import de.marcandreher.fusionkit.core.FusionKit;
+import de.marcandreher.fusionkit.core.WebAppConfig;
 import de.marcandreher.fusionkit.core.app.VersionInfo;
-import de.marcandreher.fusionkit.core.config.WebAppConfig;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 
@@ -338,16 +338,16 @@ public class FusionInfoHandler implements Handler {
             config.getDomain(),
             config.getPort(),
             config.getProductionLevel(),
-            config.isShowBanner() ? "status-true" : "status-false",
-            config.isShowBanner() ? "Enabled" : "Disabled",
-            config.isRequestLogging() ? "status-true" : "status-false", 
-            config.isRequestLogging() ? "Enabled" : "Disabled",
-            config.isCorsEnabled() ? "status-true" : "status-false",
-            config.isCorsEnabled() ? "Enabled" : "Disabled",
-            config.isStaticfiles() ? "status-true" : "status-false",
-            config.isStaticfiles() ? "Enabled" : "Disabled",
-            config.isFreemarker() ? "status-true" : "status-false",
-            config.isFreemarker() ? "Enabled" : "Disabled"
+            config.server.isShowBanner() ? "status-true" : "status-false",
+            config.server.isShowBanner() ? "Enabled" : "Disabled",
+            config.logging.isRequestLogging() ? "status-true" : "status-false",
+            config.logging.isRequestLogging() ? "Enabled" : "Disabled",
+            config.cors.isEnabled() ? "status-true" : "status-false",
+            config.cors.isEnabled() ? "Enabled" : "Disabled",
+            config.staticFiles.isEnabled() ? "status-true" : "status-false",
+            config.staticFiles.isEnabled() ? "Enabled" : "Disabled",
+            config.freemarker.isEnabled() ? "status-true" : "status-false",
+            config.freemarker.isEnabled() ? "Enabled" : "Disabled"
         );
     }
     

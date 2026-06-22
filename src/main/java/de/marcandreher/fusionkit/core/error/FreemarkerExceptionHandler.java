@@ -6,7 +6,7 @@ import java.io.Writer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.marcandreher.fusionkit.core.config.WebAppConfig;
+import de.marcandreher.fusionkit.core.WebAppConfig;
 import freemarker.core.Environment;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
@@ -30,7 +30,7 @@ public class FreemarkerExceptionHandler implements TemplateExceptionHandler {
         logger.error("Freemarker template error in template '{}': {}", templateName, te.getMessage(), te);
         
         // Write error message to output in development mode
-        if (config.isTemplatesAutoReload()) {
+        if (config.freemarker.isTemplatesAutoReload()) {
             try {
                 writeErrorToOutput(out, templateName, te.getMessage());
             } catch (IOException writeEx) {

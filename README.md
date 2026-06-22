@@ -94,37 +94,45 @@ public class App extends FusionKit {
             ServerTimezone.valueOf(config.getDatabase().getTimezone())
         );
     
-        // Configure web application
-        WebAppConfig webAppConfig = WebAppConfig.builder()
-            .name("MyApp")
-            .port(config.getServer().getPort())
-            .domain(config.getServer().getDomain())
-            .staticfiles(true)      // Enable static file serving
-            .freemarker(true)       // Enable Freemarker templating
-            .i18n(true)            // Enable internationalization
-            .productionLevel(ProductionLevel.DEVELOPMENT)
-            .build();
+        FusionKit.registerWebApplication(config -> {
+                config.setName("TestApp");
+                config.setDomain("http://localhost");
+                config.setPort(8080);
+                config.setDebugger(true);
+                
+                // Configure modules
 
-        // Register and start the application
-        FusionKit.registerWebApplication(new MyWebApplication(webAppConfig));
-    }
-}
-```
+                config.auth.setEnabled(true);
+                config.auth.setEnabledProviders(Set.of(AuthProvider.DISCORD, AuthProvider.GITHUB));
+                config.auth.setAuthSessionStore(new SessionAttributeAuthSessionStore()); // Default is in memory, but files exists too and redis needs own impl but easy with interface
+                config.auth.setAuthSessionInterval(60 * 60 * 24 * 3); // 3 days
 
-### 3. Create your web application
+                config.staticFiles.setEnabled(true);
+                config.staticFiles.setExternal(true);
+                config.staticFiles.setPath("/public");
 
-```java
-public class MyWebApplication extends WebApplication {
-    public MyWebApplication(WebAppConfig config) {
-        super(config);
-    }
-    
-    @Override
-    public void routes() {
-        // Define your routes
-        get("/", ctx -> ctx.render("index.ftl"));
-        get("/api/users", UserController::getAllUsers);
-        post("/api/users", UserController::createUser);
+                // looks in resources/i18n/messages_en.properties
+                config.i18n.setEnabled(true);
+                config.i18n.setDefaultLanguage(Locale.ENGLISH);
+                config.i18n.setDirectory("/i18n");
+                
+                config.freemarker.setEnabled(true);
+                config.freemarker.setTemplatesDirectory("templates/");
+                config.freemarker.setTemplatesAutoReload(true); // Disable caching for development
+                
+                config.cors.setEnabled(true);
+                config.cors.setMethods("");
+                config.cors.setOrigins("");
+                config.cors.setHeaders("");
+
+                config.logging.setRequestLogging(true);
+
+                // Route up your app
+
+                config.routes(router -> {
+                    router.get("/", ctx -> ctx.result("Hello World"));
+                });
+            });
     }
 }
 ```

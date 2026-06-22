@@ -3,6 +3,7 @@
 /logs/
 /target/
 /public/sitemap.xml
+/.config/
 
 *.log
 *.class

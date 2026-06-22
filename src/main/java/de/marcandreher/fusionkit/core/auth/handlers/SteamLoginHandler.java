@@ -13,6 +13,7 @@ import com.google.gson.JsonParser;
 
 import de.marcandreher.fusionkit.core.FusionKit;
 import de.marcandreher.fusionkit.core.WebApp;
+import de.marcandreher.fusionkit.core.WebAppConfig;
 import de.marcandreher.fusionkit.core.auth.AuthHandler;
 import de.marcandreher.fusionkit.core.auth.AuthProvider;
 import de.marcandreher.fusionkit.core.auth.AuthRouteRegistrar;
@@ -20,7 +21,6 @@ import de.marcandreher.fusionkit.core.auth.LoginHandler;
 import de.marcandreher.fusionkit.core.auth.User;
 import de.marcandreher.fusionkit.core.auth.config.SteamConfig;
 import de.marcandreher.fusionkit.core.auth.store.AuthSessionStore;
-import de.marcandreher.fusionkit.core.config.WebAppConfig;
 import de.marcandreher.fusionkit.core.javalin.ProductionLevel;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.Context;
@@ -45,7 +45,7 @@ public class SteamLoginHandler implements LoginHandler {
 
     public SteamLoginHandler(WebApp app, SteamConfig steamConfig) {
         this.config = app.getConfig();
-        this.sessionStore = config.getAuthSessionStore();
+        this.sessionStore = config.auth.getAuthSessionStore();
         this.steamConfig = steamConfig;
         this.realm = buildRealm(config);
         this.redirectUri = this.realm + "/auth/steam/callback";
@@ -90,8 +90,8 @@ public class SteamLoginHandler implements LoginHandler {
                 return;
             }
 
-            if (config.getAuthHandler() != null) {
-                config.getAuthHandler().handle(user, ctx);
+            if (config.auth.getAuthHandler() != null) {
+                config.auth.getAuthHandler().handle(user, ctx);
             }
 
             sessionStore.setUser(ctx, user);

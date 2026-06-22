@@ -3,7 +3,7 @@ package de.marcandreher.fusionkit.core.error;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.marcandreher.fusionkit.core.config.WebAppConfig;
+import de.marcandreher.fusionkit.core.WebAppConfig;
 import io.javalin.http.Context;
 
 public class JavalinExceptionHandler {
@@ -29,7 +29,7 @@ public class JavalinExceptionHandler {
             return;
         }
         
-        if (config.isTemplatesAutoReload()) {
+        if (config.freemarker.isTemplatesAutoReload()) {
             String errorHtml = buildErrorHtml(ctx.path(), e);
             ctx.status(500).html(errorHtml);
         } else {

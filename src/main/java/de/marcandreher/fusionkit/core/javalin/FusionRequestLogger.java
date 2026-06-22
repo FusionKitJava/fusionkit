@@ -3,7 +3,7 @@ package de.marcandreher.fusionkit.core.javalin;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
-import de.marcandreher.fusionkit.core.config.WebAppConfig;
+import de.marcandreher.fusionkit.core.WebAppConfig;
 import io.javalin.http.Context;
 import io.javalin.http.RequestLogger;
 
@@ -19,7 +19,7 @@ public class FusionRequestLogger implements RequestLogger {
 
     @Override
     public void handle(@NotNull Context ctx, @NotNull Float executionTimeMs) throws Exception {
-        String logMessage = config.getLogFormat()
+        String logMessage = config.logging.getLogFormat()
                 .replace("{method}", ctx.method().toString().toUpperCase())
                 .replace("{host}", ctx.host())
                 .replace("{path}", ctx.path())

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.zaxxer.hikari.HikariPoolMXBean;
 
-import de.marcandreher.fusionkit.core.config.WebAppConfig;
+import de.marcandreher.fusionkit.core.WebAppConfig;
 import de.marcandreher.fusionkit.core.database.Database;
 import de.marcandreher.fusionkit.core.database.MySQL;
 import io.javalin.http.Context;
