@@ -2,7 +2,9 @@ package de.marcandreher.fusionkit.core;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -39,6 +41,7 @@ public class FusionKit {
     protected static OkHttpClient client = new OkHttpClient.Builder().build();
     protected static CommandService commandService;
     protected static ClassLoader classLoader;
+    protected static Set<Database> databases = new HashSet<>();
     public static Database database;
     
     static {
@@ -168,5 +171,13 @@ public class FusionKit {
         webApps.add(app);
         logger.debug("Registered web application: {}", app.getConfig().getName());
     }
-    
+
+    public static Database getDatabase() {
+        return databases.isEmpty() ? null : databases.iterator().next();
+    }
+
+    public static Database getByWebApp(WebAppConfig config) {
+        return config.getDatabase();
+    }
+
 }

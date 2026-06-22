@@ -5,10 +5,11 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import de.marcandreher.fusionkit.core.auth.AfterLoginHandler;
+import de.marcandreher.fusionkit.core.auth.AuthProcessor;
 import de.marcandreher.fusionkit.core.auth.AuthProvider;
 import de.marcandreher.fusionkit.core.auth.store.AuthSessionStore;
 import de.marcandreher.fusionkit.core.auth.store.SessionAttributeAuthSessionStore;
+import de.marcandreher.fusionkit.core.database.Database;
 import de.marcandreher.fusionkit.core.javalin.JavalinConfigurator;
 import de.marcandreher.fusionkit.core.javalin.ProductionLevel;
 import io.javalin.config.RoutesConfig;
@@ -32,6 +33,10 @@ public class WebAppConfig {
     public final SSL ssl = new SSL();
     public final Sessions sessions = new Sessions();
     public final Server server = new Server();
+
+    @Setter 
+    @Getter
+    private Database database;
 
     @Setter
     @Getter
@@ -75,7 +80,7 @@ public class WebAppConfig {
         private AuthProvider authProvider = AuthProvider.NONE;
         private Set<AuthProvider> enabledProviders = new LinkedHashSet<>();
         private long authSessionInterval = 24 * 60 * 60 * 1000;
-        private AfterLoginHandler authHandler = null;
+        private AuthProcessor authProcessor = null;
         private AuthSessionStore authSessionStore = new SessionAttributeAuthSessionStore();
     }
 

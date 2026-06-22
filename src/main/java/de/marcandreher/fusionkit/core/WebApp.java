@@ -11,6 +11,7 @@ import de.marcandreher.fusionkit.core.auth.AuthProvider;
 import de.marcandreher.fusionkit.core.auth.AuthProviderRegistry;
 import de.marcandreher.fusionkit.core.auth.LoginHandler;
 import de.marcandreher.fusionkit.core.config.FreemarkerConfiguration;
+import de.marcandreher.fusionkit.core.database.Database;
 import de.marcandreher.fusionkit.core.debug.FusionDebugAPIHandler;
 import de.marcandreher.fusionkit.core.debug.FusionDebugCache;
 import de.marcandreher.fusionkit.core.debug.FusionDebugHandler;
@@ -27,6 +28,7 @@ import de.marcandreher.fusionkit.core.routes.FusionInfoHandler;
 import freemarker.template.Configuration;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
+import io.javalin.config.Key;
 import io.javalin.config.RoutesConfig;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.rendering.template.JavalinFreemarker;
@@ -50,7 +52,9 @@ public class WebApp {
                         queuedThreadPool.setName("FK-WebApp-" + config.getName());
                     }
                 });
-                
+                var myKey = new Key<Database>("database");
+                javalinConfig.appData(myKey, config.getDatabase());
+
                 // Apply other configurations
                 configureJavalin(javalinConfig);
 
@@ -67,6 +71,7 @@ public class WebApp {
                 }
 
                 appRoutes.accept(javalinConfig.routes);
+                
 
             });
 

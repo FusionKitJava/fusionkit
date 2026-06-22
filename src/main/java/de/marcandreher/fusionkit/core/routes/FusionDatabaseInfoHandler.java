@@ -185,7 +185,7 @@ public class FusionDatabaseInfoHandler implements Handler {
     }
 
     private String buildConnectionPoolInfo() {
-        if (Database.dataSource == null) {
+        if (config.getDatabase().getDataSource() == null) {
             return """
                 <table>
                     <thead>
@@ -203,7 +203,7 @@ public class FusionDatabaseInfoHandler implements Handler {
             """;
         }
 
-        HikariPoolMXBean poolBean = Database.dataSource.getHikariPoolMXBean();
+        HikariPoolMXBean poolBean = config.getDatabase().getDataSource().getHikariPoolMXBean();
         
         return """
             <table>
@@ -248,20 +248,20 @@ public class FusionDatabaseInfoHandler implements Handler {
                 </tbody>
             </table>
         """.formatted(
-            Database.dataSource.getJdbcUrl(),
+            config.getDatabase().getDataSource().getJdbcUrl(),
             poolBean.getActiveConnections(),
             poolBean.getIdleConnections(),
             poolBean.getTotalConnections(),
             poolBean.getThreadsAwaitingConnection(),
-            Database.dataSource.getMaximumPoolSize(),
-            Database.dataSource.getMinimumIdle()
+            config.getDatabase().getDataSource().getMaximumPoolSize(),
+            config.getDatabase().getDataSource().getMinimumIdle()
         );
     }
 
     private String buildActiveConnectionsInfo() {
         ArrayList<MySQLConnectionInfo> connections = new ArrayList<>();
-        for (MySQL sql : Database.runningConnections) {
-            connections.add(new MySQLConnectionInfo(sql.getCaller(), sql.getConnectionCreated()));
+        for (MySQL sql : config.getDatabase().runningConnections) {
+            connections.add(new MySQLConnectionInfo(sql.caller[4].getClass().getName(), sql.getConnectionCreated()));
         }
 
         StringBuilder html = new StringBuilder();
@@ -317,7 +317,7 @@ public class FusionDatabaseInfoHandler implements Handler {
     }
 
     private String buildDatabaseConfigInfo() {
-        if (Database.config == null) {
+        if (config.getDatabase().getConfig() == null) {
             return """
                 <table>
                     <thead>
@@ -383,19 +383,19 @@ public class FusionDatabaseInfoHandler implements Handler {
                 </tbody>
             </table>
         """.formatted(
-            Database.config.isLogSql() ? "status-active" : "status-inactive",
-            Database.config.isLogSql() ? "Enabled" : "Disabled",
-            Database.config.isAutoCommit() ? "status-active" : "status-inactive",
-            Database.config.isAutoCommit() ? "Enabled" : "Disabled",
-            Database.config.isCachePreparedStatements() ? "status-active" : "status-inactive",
-            Database.config.isCachePreparedStatements() ? "Enabled" : "Disabled",
-            Database.config.getPreparedStatementCacheSize(),
-            Database.config.getConnectionTimeout(),
-            Database.config.getIdleTimeout(),
-            Database.config.getMaxLifetime(),
-            Database.config.getCharacterEncoding(),
-            Database.config.isUseSSL() ? "status-active" : "status-inactive",
-            Database.config.isUseSSL() ? "Enabled" : "Disabled"
+            config.getDatabase().getDatabaseConfig().isLogSql() ? "status-active" : "status-inactive",
+            config.getDatabase().getDatabaseConfig().isLogSql() ? "Enabled" : "Disabled",
+            config.getDatabase().getDatabaseConfig().isAutoCommit() ? "status-active" : "status-inactive",
+            config.getDatabase().getDatabaseConfig().isAutoCommit() ? "Enabled" : "Disabled",
+            config.getDatabase().getDatabaseConfig().isCachePreparedStatements() ? "status-active" : "status-inactive",
+            config.getDatabase().getDatabaseConfig().isCachePreparedStatements() ? "Enabled" : "Disabled",
+            config.getDatabase().getDatabaseConfig().getPreparedStatementCacheSize(),
+            config.getDatabase().getDatabaseConfig().getConnectionTimeout(),
+            config.getDatabase().getDatabaseConfig().getIdleTimeout(),
+            config.getDatabase().getDatabaseConfig().getMaxLifetime(),
+            config.getDatabase().getDatabaseConfig().getCharacterEncoding(),
+            config.getDatabase().getDatabaseConfig().isUseSSL() ? "status-active" : "status-inactive",
+            config.getDatabase().getDatabaseConfig().isUseSSL() ? "Enabled" : "Disabled"
         );
     }
 
@@ -423,10 +423,10 @@ public class FusionDatabaseInfoHandler implements Handler {
                 </tbody>
             </table>
         """.formatted(
-            Database.runningConnections.size(),
-            Database.currentConnections,
-            Database.dataSource != null ? "status-active" : "status-inactive",
-            Database.dataSource != null ? "Yes" : "No"
+            config.getDatabase().runningConnections.size(),
+            config.getDatabase().currentConnections,
+            config.getDatabase().dataSource != null ? "status-active" : "status-inactive",
+            config.getDatabase().dataSource != null ? "Yes" : "No"
         );
     }
 
