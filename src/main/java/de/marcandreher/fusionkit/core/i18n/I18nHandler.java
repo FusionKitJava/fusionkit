@@ -1,12 +1,13 @@
 package de.marcandreher.fusionkit.core.i18n;
 
+import java.util.List;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+
+import de.marcandreher.fusionkit.core.WebAppConfig;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-
-import java.util.*;
-import java.util.MissingResourceException;
-
-import de.marcandreher.fusionkit.core.config.WebAppConfig;
 
 public class I18nHandler implements Handler {
 
@@ -43,11 +44,11 @@ public class I18nHandler implements Handler {
             // 3. Get ResourceBundle with fallback
             ResourceBundle messages;
             try {
-                messages = ResourceBundle.getBundle(config.getI18nDirectory() + "/messages", locale, classLoader);
+                messages = ResourceBundle.getBundle(config.i18n.getDirectory() + "/messages", locale, classLoader);
             } catch (MissingResourceException e) {
                 // Fallback to default locale if bundle not found
-                messages = ResourceBundle.getBundle(config.getI18nDirectory() + "/messages", config.getI18nDefaultLanguage(), classLoader);
-                locale = config.getI18nDefaultLanguage();
+                messages = ResourceBundle.getBundle(config.i18n.getDirectory() + "/messages", config.i18n.getDefaultLanguage(), classLoader);
+                locale = config.i18n.getDefaultLanguage();
             }
 
             // 4. Store in attributes
@@ -57,9 +58,9 @@ public class I18nHandler implements Handler {
 
         } catch (Exception e) {
             // Fallback in case of any error
-            ctx.attribute("locale", config.getI18nDefaultLanguage());
+            ctx.attribute("locale", config.i18n.getDefaultLanguage());
             ctx.attribute("acceptLanguage", "Error occurred");
-            ctx.attribute("msg", ResourceBundle.getBundle(config.getI18nDirectory() + "/messages", config.getI18nDefaultLanguage(), classLoader));
+            ctx.attribute("msg", ResourceBundle.getBundle(config.i18n.getDirectory() + "/messages", config.i18n.getDefaultLanguage(), classLoader));
         }
     }
     
@@ -69,7 +70,7 @@ public class I18nHandler implements Handler {
      */
     private Locale parseLocale(String languageCode) {
         if (languageCode == null || languageCode.isBlank()) {
-            return config.getI18nDefaultLanguage();
+            return config.i18n.getDefaultLanguage();
         }
         
         // Normalize the language code to use hyphens (standard format)
@@ -80,7 +81,7 @@ public class I18nHandler implements Handler {
             return Locale.forLanguageTag(normalizedCode);
         } catch (Exception e) {
             // Fallback to default language if parsing fails
-            return config.getI18nDefaultLanguage();
+            return config.i18n.getDefaultLanguage();
         }
     }
     
@@ -117,7 +118,7 @@ public class I18nHandler implements Handler {
         }
 
         // Fall back to default language if no match found
-        return config.getI18nDefaultLanguage();
+        return config.i18n.getDefaultLanguage();
     }
     
     /**
@@ -126,7 +127,7 @@ public class I18nHandler implements Handler {
      */
     private boolean hasResourceBundle(Locale locale, ClassLoader classLoader) {
         try {
-            ResourceBundle.getBundle(config.getI18nDirectory() + "/messages", locale, classLoader);
+            ResourceBundle.getBundle(config.i18n.getDirectory() + "/messages", locale, classLoader);
             return true;
         } catch (MissingResourceException e) {
             return false;

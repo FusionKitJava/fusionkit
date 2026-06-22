@@ -3,6 +3,7 @@ package de.marcandreher.fusionkit.core;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,16 +16,16 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import de.marcandreher.fusionkit.core.app.FileStructureManager;
-import de.marcandreher.fusionkit.core.app.Shutdown;
 import de.marcandreher.fusionkit.core.app.FileStructureManager.DirectoryType;
+import de.marcandreher.fusionkit.core.app.Shutdown;
 import de.marcandreher.fusionkit.core.app.VersionInfo;
 import de.marcandreher.fusionkit.core.cmd.Command;
 import de.marcandreher.fusionkit.core.cmd.CommandService;
-import de.marcandreher.fusionkit.core.logger.JLineConsoleAppender;
 import de.marcandreher.fusionkit.core.cmd.implementations.AppCommand;
 import de.marcandreher.fusionkit.core.config.AppConfiguration;
 import de.marcandreher.fusionkit.core.cron.FusionCron;
 import de.marcandreher.fusionkit.core.database.Database;
+import de.marcandreher.fusionkit.core.logger.JLineConsoleAppender;
 import okhttp3.OkHttpClient;
 
 public class FusionKit {
@@ -159,7 +160,11 @@ public class FusionKit {
         root.setLevel(ch.qos.logback.classic.Level.toLevel(level));
     }
 
-    public static void registerWebApplication(WebApp app) {
+    public static void registerWebApplication(Consumer<WebAppConfig> appConfig) {
+        WebAppConfig config = new WebAppConfig();
+        appConfig.accept(config);
+
+        WebApp app = new WebApp(config, config.getRouter());
         webApps.add(app);
         logger.debug("Registered web application: {}", app.getConfig().getName());
     }

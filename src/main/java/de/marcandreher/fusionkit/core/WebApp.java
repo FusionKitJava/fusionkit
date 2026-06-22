@@ -11,7 +11,6 @@ import de.marcandreher.fusionkit.core.auth.AuthProvider;
 import de.marcandreher.fusionkit.core.auth.AuthProviderRegistry;
 import de.marcandreher.fusionkit.core.auth.LoginHandler;
 import de.marcandreher.fusionkit.core.config.FreemarkerConfiguration;
-import de.marcandreher.fusionkit.core.config.WebAppConfig;
 import de.marcandreher.fusionkit.core.debug.FusionDebugAPIHandler;
 import de.marcandreher.fusionkit.core.debug.FusionDebugCache;
 import de.marcandreher.fusionkit.core.debug.FusionDebugHandler;
@@ -38,11 +37,10 @@ public class WebApp {
     private WebAppConfig config;
     private Javalin app;
 
-    public WebApp(Consumer<RoutesConfig> router, WebAppConfig config) {
-
+    public WebApp(WebAppConfig config, Consumer<RoutesConfig> appRoutes) {
+        this.config = config;
         long startTime = System.currentTimeMillis();
         this.logger = FusionKit.getLogger(WebApp.class, config.getName());
-        this.config = config;
         try {
             app = Javalin.create(javalinConfig -> {
                 // Configure custom thread pool name for Jetty
@@ -60,15 +58,16 @@ public class WebApp {
                     setupDevEnv(javalinConfig);
                 }
 
-                if (config.isI18n()) {
+                if (config.i18n.isEnabled()) {
                     setupLocalization(javalinConfig);
                 }
 
-                if (config.isAuth()) {
+                if (config.auth.isEnabled()) {
                     setupAuth(javalinConfig);
                 }
 
-                router.accept(javalinConfig.routes);
+                appRoutes.accept(javalinConfig.routes);
+
             });
 
             this.app.start(config.getPort());
@@ -87,8 +86,8 @@ public class WebApp {
     }
 
     private void setupAuth(JavalinConfig javalinConfig) {
-        if (config.getAuthProviders() != null && !config.getAuthProviders().isEmpty()) {
-            for (AuthProvider provider : config.getAuthProviders()) {
+        if (config.auth.getEnabledProviders() != null && !config.auth.getEnabledProviders().isEmpty()) {
+            for (AuthProvider provider : config.auth.getEnabledProviders()) {
                 if (provider == null || provider == AuthProvider.NONE) {
                     continue;
                 }
@@ -100,10 +99,10 @@ public class WebApp {
                 }
                 loginHandler.registerRoutes(javalinConfig);
             }
-        } else if (config.getAuthProvider() != AuthProvider.NONE) {
-            LoginHandler loginHandler = AuthProviderRegistry.createHandler(config.getAuthProvider(), this);
+        } else if (config.auth.getAuthProvider() != AuthProvider.NONE) {
+            LoginHandler loginHandler = AuthProviderRegistry.createHandler(config.auth.getAuthProvider(), this);
             if (loginHandler == null) {
-                logger.error("Unsupported AuthProvider: {}", config.getAuthProvider());
+                logger.error("Unsupported AuthProvider: {}", config.auth.getAuthProvider());
                 System.exit(1);
                 return;
             }
@@ -146,37 +145,49 @@ public class WebApp {
 
     private void configureJavalin(JavalinConfig javalinConfig) {
         // Configure server settings
-        javalinConfig.startup.showJavalinBanner = config.isShowBanner();
-        javalinConfig.http.maxRequestSize = config.getMaxRequestSize();
+        javalinConfig.startup.showJavalinBanner = config.server.isShowBanner();
+        javalinConfig.http.maxRequestSize = config.server.getMaxRequestSize();
 
         javalinConfig.jsonMapper(new FusionJsonMapper());
 
         // Configure request logging
-        if (config.isRequestLogging()) {
+        if (config.logging.isRequestLogging()) {
             javalinConfig.requestLogger.http(new FusionRequestLogger(config, logger));
         }
 
         // Configure CORS
-        if (config.isCorsEnabled()) {
+        if (config.cors.isEnabled()) {
             javalinConfig.bundledPlugins.enableCors(cors -> {
                 cors.addRule(corsRule -> {
-                    for (String origin : config.getCorsOrigins().split(",")) {
-                        corsRule.allowHost(origin.trim());
+
+                    String origins = config.cors.getOrigins();
+
+                    if (origins != null && origins.trim().equals("*")) {
+                        corsRule.anyHost();
+                    } else if (origins != null && !origins.isBlank()) {
+                        for (String origin : origins.split(",")) {
+                            String host = origin.trim();
+                            if (!host.isEmpty()) {
+                                corsRule.allowHost(host);
+                            }
+                        }
                     }
-                    corsRule.allowCredentials = true;
+
+                    // Credentials cannot be used with wildcard origins
+                    corsRule.allowCredentials =
+                        origins != null && !origins.trim().equals("*");
                 });
             });
         }
-
         // Configure static files if enabled
-        if (config.isStaticfiles()) {
-            if (config.isStaticFilesExternal()) {
+        if (config.staticFiles.isEnabled()) {
+            if (config.staticFiles.isExternal()) {
                 FileStructureManager staticDir = new FileStructureManager(FileStructureManager.DirectoryType.PUBLIC);
                 staticDir.persist();
 
                 javalinConfig.staticFiles.add(staticFiles -> {
-                    staticFiles.hostedPath = config.getStaticFilesPath();
-                    staticFiles.directory = config.getStaticFilesDirectory();
+                    staticFiles.hostedPath = config.staticFiles.getPath();
+                    staticFiles.directory = config.staticFiles.getDirectory();
                     staticFiles.location = Location.EXTERNAL;
                     staticFiles.headers = Map.of(
                             "Cache-Control", "public, max-age=31536000" // 1 year cache
@@ -186,8 +197,8 @@ public class WebApp {
 
             } else {
                 javalinConfig.staticFiles.add(staticFiles -> {
-                    staticFiles.hostedPath = config.getStaticFilesPath();
-                    staticFiles.directory = config.getStaticFilesDirectory();
+                    staticFiles.hostedPath = config.staticFiles.getPath();
+                    staticFiles.directory = config.staticFiles.getDirectory();
                     staticFiles.location = Location.CLASSPATH;
                     staticFiles.headers = Map.of(
                             "Cache-Control", "public, max-age=31536000" // 1 year cache
@@ -196,7 +207,7 @@ public class WebApp {
             }
         }
         // Configure Freemarker if enabled
-        if (config.isFreemarker()) {
+        if (config.freemarker.isEnabled()) {
             try {
                 FileStructureManager templateDir = new FileStructureManager(
                         FileStructureManager.DirectoryType.TEMPLATES);

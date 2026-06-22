@@ -6,6 +6,7 @@ import java.io.IOException;
 import com.moandjiezana.toml.Toml;
 import com.moandjiezana.toml.TomlWriter;
 
+import de.marcandreher.fusionkit.core.WebAppConfig;
 import de.marcandreher.fusionkit.core.error.FreemarkerExceptionHandler;
 import de.marcandreher.fusionkit.core.javalin.ProductionLevel;
 import freemarker.cache.FileTemplateLoader;
@@ -25,6 +26,7 @@ public class FreemarkerConfiguration {
             FreemarkerConfigModel defaultConfig = new FreemarkerConfigModel();
             TomlWriter writer = new TomlWriter();
             try {
+                configFile.createNewFile();
                 writer.write(defaultConfig, configFile);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -40,8 +42,8 @@ public class FreemarkerConfiguration {
         Configuration fmConfig = new Configuration(new Version(FREEMARKER_VERSION));
         fmConfig.setTemplateLoader(templateLoader);
         fmConfig.setDirectoryForTemplateLoading(templateDir);
-        fmConfig.setDefaultEncoding(webAppConfig.getTemplatesEncoding());
-        fmConfig.setTemplateUpdateDelayMilliseconds(webAppConfig.isTemplatesAutoReload() ? 0 : Integer.MAX_VALUE);
+        fmConfig.setDefaultEncoding(webAppConfig.freemarker.getTemplatesEncoding());
+        fmConfig.setTemplateUpdateDelayMilliseconds(webAppConfig.freemarker.isTemplatesAutoReload() ? 0 : Integer.MAX_VALUE);
         fmConfig.setDefaultEncoding(model.getDefaultEncoding());
         fmConfig.setNumberFormat(model.getNumberFormat());
         fmConfig.setWhitespaceStripping(model.isWhitespaceStripping());
