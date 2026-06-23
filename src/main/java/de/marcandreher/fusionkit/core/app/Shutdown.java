@@ -1,17 +1,16 @@
 package de.marcandreher.fusionkit.core.app;
 
+import org.slf4j.Logger;
+
 import de.marcandreher.fusionkit.core.FusionKit;
 import de.marcandreher.fusionkit.core.WebApp;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Shutdown extends FusionKit {
 
-    private static final Logger logger = LoggerFactory.getLogger(Shutdown.class);
+    private static final Logger logger = FusionKit.getLogger(Shutdown.class);
 
     public Thread getShutdownHook() {
         return new Thread(() -> {
-            logger.info("");
             long startTime = System.currentTimeMillis();
             log("Shutting down FusionKit...");
             
@@ -42,7 +41,6 @@ public class Shutdown extends FusionKit {
                 }
 
                 log("FusionKit shutdown complete. in <" + (System.currentTimeMillis() - startTime) + " ms>");
-                logger.info("FusionKit shutdown complete.");
                 
             } catch (Exception e) {
                 logger.error("Error during shutdown", e);
@@ -51,7 +49,7 @@ public class Shutdown extends FusionKit {
     }
 
     public void log(String message) {
-        logger.info("SHUTDOWN | {}", message);
+        logger.info("{}", message);
     }
     
 }

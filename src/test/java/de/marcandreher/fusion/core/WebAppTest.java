@@ -9,20 +9,26 @@ import org.junit.Test;
 import de.marcandreher.fusionkit.core.FusionKit;
 import de.marcandreher.fusionkit.core.auth.AuthProvider;
 import de.marcandreher.fusionkit.core.auth.store.SessionAttributeAuthSessionStore;
+import de.marcandreher.fusionkit.core.database.Database;
 import okhttp3.OkHttpClient;
 
 public class WebAppTest extends FusionKit {
     
-
-
     @Before
     public void setUp() {
+        database = new Database(config -> {
+            config.setHost("local");
+        });
+        database.connect();
+
         FusionKit.setApplication(WebAppTest.class);
         FusionKit.registerWebApplication(config -> {
             config.setName("TestApp");
             config.setDomain("http://localhost");
             config.setPort(8080);
             config.setDebugger(true);
+
+            config.setDatabase(database);
             
             config.auth.setEnabled(true);
             config.auth.setEnabledProviders(Set.of(AuthProvider.DISCORD, AuthProvider.GITHUB));

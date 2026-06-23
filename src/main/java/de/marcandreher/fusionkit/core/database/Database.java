@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 
@@ -15,17 +16,20 @@ import de.marcandreher.fusionkit.core.cmd.implementations.DatabaseCommand;
 import de.marcandreher.fusionkit.core.config.DatabaseConfiguration;
 
 public class Database {
-    public static Logger logger = FusionKit.getLogger(Database.class);
-    public static List<MySQL> runningConnections = new ArrayList<MySQL>();
+    private static final Logger logger = FusionKit.getLogger(Database.class);
+    public List<MySQL> runningConnections = new ArrayList<MySQL>();
+    public HikariDataSource dataSource;
+    public int currentConnections;
+    public DatabaseConfiguration config;
+
+    private DbConfig dbConfig = new DbConfig();
     private HikariConfig hikariConfig;
-    public static HikariDataSource dataSource;
-    public static int currentConnections;
-    public static DatabaseConfiguration config;
 
     /**
      * Constructs a new Database object with default settings.
      */
-    public Database() {
+    public Database(Consumer<DbConfig> config) {
+        config.accept(dbConfig);
         if(FusionKit.database != null) {
             logger.warn("A Database instance already exists.");
             return;
@@ -73,15 +77,14 @@ public class Database {
      * @param database       The name of the database to connect to.
      * @param serverTimezone The server timezone for the MySQL connection.
      */
-    public void connectToMySQL(String host, String user, String password, String database,
-            ServerTimezone serverTimezone) {
+    public void connect() {
         config = DatabaseConfiguration.load();
         config.apply(hikariConfig);
-        String url = "jdbc:mysql://" + host + ":3306/" + database + "?serverTimezone=" + serverTimezone + "&allowPublicKeyRetrieval=true";
+        String url = "jdbc:mysql://" + dbConfig.getHost() + ":3306/" + dbConfig.getDatabase() + "?serverTimezone=" + dbConfig.getServerTimezone() + "&allowPublicKeyRetrieval=true";
         hikariConfig
                 .setJdbcUrl(url);
-        hikariConfig.setUsername(user);
-        hikariConfig.setPassword(password);
+        hikariConfig.setUsername(dbConfig.getUsername());
+        hikariConfig.setPassword(dbConfig.getPassword());
 
         try {
             dataSource = new HikariDataSource(hikariConfig);
@@ -101,6 +104,10 @@ public class Database {
         return hikariConfig;
     }
 
+    public DatabaseConfiguration getDatabaseConfig() {
+        return config;
+    }
+
     public HikariDataSource getDataSource() {
         return dataSource;
     }
@@ -117,15 +124,10 @@ public class Database {
      *
      * @return A connection to the MySQL database.
      */
-    public static MySQL getConnection() {
+    public MySQL getConnection() {
         MySQL connection = null;
-        try {
-            connection = new MySQL(dataSource.getConnection());
-            Database.currentConnections++;
-            return connection;
-        } catch (SQLException e) {
-            logger.error("Error while obtaining a connection from the pool.", e);
-            return null;
-        }
+        connection = new MySQL(this);
+        this.currentConnections++;
+        return connection;
     }
 }

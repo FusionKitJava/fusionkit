@@ -105,8 +105,8 @@ public abstract class OAuth2LoginHandler implements LoginHandler {
                     return;
                 }
 
-                if (config.auth.getAuthHandler() != null) {
-                    config.auth.getAuthHandler().handle(user, ctx);
+                if (config.auth.getAuthProcessor() != null) {
+                    config.auth.getAuthProcessor().handle(user, ctx);
                 }
 
                 sessionStore.setUser(ctx, user);
