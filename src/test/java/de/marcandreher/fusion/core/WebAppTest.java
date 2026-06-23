@@ -16,11 +16,6 @@ public class WebAppTest extends FusionKit {
     
     @Before
     public void setUp() {
-        database = new Database(config -> {
-            config.setHost("local");
-        });
-        database.connect();
-
         FusionKit.setApplication(WebAppTest.class);
         FusionKit.registerWebApplication(config -> {
             config.setName("TestApp");
@@ -60,7 +55,6 @@ public class WebAppTest extends FusionKit {
 
     @Test
     public void testClient() throws InterruptedException {
-        Thread.sleep(500);
         OkHttpClient dd =  FusionKit.getHttpClient().newBuilder().build();
         // Test if works
         try (var response = dd.newCall(new okhttp3.Request.Builder().url("http://localhost:8080/").build()).execute()) {
