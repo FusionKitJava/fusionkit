@@ -3,6 +3,10 @@ package de.marcandreher.fusionkit.core.auth.handlers;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -27,7 +31,8 @@ import okhttp3.ResponseBody;
 
 public abstract class OAuth2LoginHandler implements LoginHandler {
 
-    private static final String DEFAULT_STATE = "state123";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final int TOKEN_BYTES = 32;
 
     protected final WebApp app;
     protected final WebAppConfig config;
@@ -36,6 +41,8 @@ public abstract class OAuth2LoginHandler implements LoginHandler {
     protected final String redirectUri;
 
     private final String providerId;
+    private final String stateSessionKey;
+    private final String verifierSessionKey;
 
     protected OAuth2LoginHandler(WebApp app, OAuth2ProviderConfig providerConfig, String providerId) {
         this.app = app;
@@ -44,6 +51,8 @@ public abstract class OAuth2LoginHandler implements LoginHandler {
         this.providerConfig = providerConfig;
         this.providerId = providerId;
         this.redirectUri = buildRedirectUri(config, getCallbackPath());
+        this.stateSessionKey = "oauth2_state_" + providerId;
+        this.verifierSessionKey = "oauth2_verifier_" + providerId;
     }
 
     protected abstract String getAuthorizeUrl();
@@ -80,20 +89,37 @@ public abstract class OAuth2LoginHandler implements LoginHandler {
                 authUrls = new LinkedHashMap<>();
                 ctx.attribute("authUrls", authUrls);
             }
-            authUrls.put(getProviderId(), getLoginUrl(redirectUri, DEFAULT_STATE));
+            authUrls.put(getProviderId(), getLoginPath());
             if (ctx.attribute("url") == null) {
                 ctx.attribute("url", authUrls.get(getProviderId()));
             }
         });
+        javalinConfig.routes.get(getLoginPath(), ctx -> {
+            String state = randomToken();
+            String verifier = randomToken();
+            ctx.sessionAttribute(stateSessionKey, state);
+            ctx.sessionAttribute(verifierSessionKey, verifier);
+            ctx.redirect(getLoginUrl(redirectUri, state, codeChallenge(verifier)));
+        });
         javalinConfig.routes.get(getCallbackPath(), ctx -> {
+            String expectedState = ctx.consumeSessionAttribute(stateSessionKey);
+            String codeVerifier = ctx.consumeSessionAttribute(verifierSessionKey);
+            String receivedState = ctx.queryParam("state");
+
+            if (expectedState == null || receivedState == null || codeVerifier == null
+                    || !constantTimeEquals(expectedState, receivedState)) {
+                ctx.status(403).result("Invalid state");
+                return;
+            }
+
             String code = ctx.queryParam("code");
             if (code == null) {
-                ctx.result("Missing code");
+                ctx.status(400).result("Missing code");
                 return;
             }
 
             try {
-                String accessToken = exchangeCodeForToken(code);
+                String accessToken = exchangeCodeForToken(code, codeVerifier);
                 if (accessToken == null) {
                     ctx.result("Failed to get access token");
                     return;
@@ -121,6 +147,10 @@ public abstract class OAuth2LoginHandler implements LoginHandler {
 
     @Override
     public String getLoginUrl(String redirectUri, String state) {
+        return getLoginUrl(redirectUri, state, null);
+    }
+
+    protected String getLoginUrl(String redirectUri, String state, String codeChallenge) {
         String encodedRedirectUri = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
         String encodedScope = URLEncoder.encode(getScope(), StandardCharsets.UTF_8);
 
@@ -134,6 +164,10 @@ public abstract class OAuth2LoginHandler implements LoginHandler {
         }
         if (state != null && !state.isBlank()) {
             url.append("&state=").append(URLEncoder.encode(state, StandardCharsets.UTF_8));
+        }
+        if (codeChallenge != null && !codeChallenge.isBlank()) {
+            url.append("&code_challenge=").append(URLEncoder.encode(codeChallenge, StandardCharsets.UTF_8));
+            url.append("&code_challenge_method=S256");
         }
 
         return url.toString();
@@ -166,13 +200,14 @@ public abstract class OAuth2LoginHandler implements LoginHandler {
         }
     }
 
-    private String exchangeCodeForToken(String code) throws IOException {
+    private String exchangeCodeForToken(String code, String codeVerifier) throws IOException {
         RequestBody form = new FormBody.Builder()
                 .add("client_id", providerConfig.getClientId())
                 .add("client_secret", providerConfig.getClientSecret())
                 .add("grant_type", "authorization_code")
                 .add("code", code)
                 .add("redirect_uri", redirectUri)
+                .add("code_verifier", codeVerifier)
                 .build();
 
         Request.Builder requestBuilder = new Request.Builder()
@@ -195,6 +230,32 @@ public abstract class OAuth2LoginHandler implements LoginHandler {
             }
             return json.get("access_token").getAsString();
         }
+    }
+
+    private static String randomToken() {
+        byte[] bytes = new byte[TOKEN_BYTES];
+        SECURE_RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private static String codeChallenge(String verifier) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(verifier.getBytes(StandardCharsets.US_ASCII));
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
+        }
+    }
+
+    private static boolean constantTimeEquals(String a, String b) {
+        return MessageDigest.isEqual(
+                a.getBytes(StandardCharsets.UTF_8),
+                b.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private String getLoginPath() {
+        return "/auth/" + providerId + "/login";
     }
 
     private String getCallbackPath() {
