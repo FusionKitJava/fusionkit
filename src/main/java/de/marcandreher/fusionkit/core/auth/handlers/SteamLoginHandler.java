@@ -3,9 +3,18 @@ package de.marcandreher.fusionkit.core.auth.handlers;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -36,12 +45,22 @@ public class SteamLoginHandler implements LoginHandler {
 
     private static final String STEAM_OPENID = "https://steamcommunity.com/openid/login";
     private static final String STEAM_API = "https://api.steampowered.com";
+    private static final String OPENID_NS = "http://specs.openid.net/auth/2.0";
+    private static final String IDENTIFIER_SELECT = "http://specs.openid.net/auth/2.0/identifier_select";
+    private static final Pattern CLAIMED_ID_PATTERN = Pattern.compile("^https://steamcommunity\\.com/openid/id/(\\d{17})$");
+    private static final Set<String> REQUIRED_SIGNED_FIELDS = Set.of(
+            "op_endpoint", "claimed_id", "identity", "return_to", "response_nonce", "assoc_handle");
+    private static final int NONCE_TIMESTAMP_LENGTH = 20;
+    private static final int NONCE_MAX_LENGTH = 255;
+    private static final Duration NONCE_MAX_AGE = Duration.ofMinutes(5);
+    private static final Duration NONCE_MAX_SKEW = Duration.ofMinutes(1);
 
     private final SteamConfig steamConfig;
     private final WebAppConfig config;
     private final AuthSessionStore sessionStore;
     private final String redirectUri;
     private final String realm;
+    private final Map<String, Long> usedNonces = new ConcurrentHashMap<>();
 
     public SteamLoginHandler(WebApp app, SteamConfig steamConfig) {
         this.config = app.getConfig();
@@ -61,26 +80,22 @@ public class SteamLoginHandler implements LoginHandler {
                 authUrls = new LinkedHashMap<>();
                 ctx.attribute("authUrls", authUrls);
             }
-            authUrls.put("steam", getLoginUrl(redirectUri, "state123"));
+            authUrls.put("steam", getLoginUrl(redirectUri, null));
             if (ctx.attribute("url") == null) {
                 ctx.attribute("url", authUrls.get("steam"));
             }
         });
         javalinConfig.routes.get("/auth/steam/callback", ctx -> {
-            if (!verifyOpenId(ctx)) {
-                ctx.result("Steam OpenID verification failed");
+            String steamId;
+            try {
+                steamId = authenticate(ctx);
+            } catch (IOException e) {
+                FusionKit.getLogger(SteamLoginHandler.class).error("Steam OpenID verification failed", e);
+                ctx.status(502).result("Steam OpenID verification failed");
                 return;
             }
-
-            String claimedId = ctx.queryParam("openid.claimed_id");
-            if (claimedId == null) {
-                ctx.result("Missing Steam OpenID claimed_id");
-                return;
-            }
-
-            String steamId = extractSteamId(claimedId);
             if (steamId == null) {
-                ctx.result("Invalid Steam OpenID claimed_id");
+                ctx.status(403).result("Steam OpenID verification failed");
                 return;
             }
 
@@ -104,26 +119,118 @@ public class SteamLoginHandler implements LoginHandler {
     public String getLoginUrl(String redirectUri, String state) {
         String encodedRedirectUri = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
         String encodedRealm = URLEncoder.encode(realm, StandardCharsets.UTF_8);
+        String encodedSelect = URLEncoder.encode(IDENTIFIER_SELECT, StandardCharsets.UTF_8);
 
         return STEAM_OPENID
-                + "?openid.ns=" + URLEncoder.encode("http://specs.openid.net/auth/2.0", StandardCharsets.UTF_8)
+                + "?openid.ns=" + URLEncoder.encode(OPENID_NS, StandardCharsets.UTF_8)
                 + "&openid.mode=checkid_setup"
                 + "&openid.return_to=" + encodedRedirectUri
                 + "&openid.realm=" + encodedRealm
-                + "&openid.identity=" + URLEncoder.encode("http://specs.openid.net/auth/2.0/identifier_select", StandardCharsets.UTF_8)
-                + "&openid.claimed_id=" + URLEncoder.encode("http://specs.openid.net/auth/2.0/identifier_select", StandardCharsets.UTF_8);
+                + "&openid.identity=" + encodedSelect
+                + "&openid.claimed_id=" + encodedSelect;
     }
 
-    private boolean verifyOpenId(Context ctx) throws IOException {
-        Map<String, List<String>> queryParams = ctx.queryParamMap();
-        FormBody.Builder formBuilder = new FormBody.Builder();
-        for (Map.Entry<String, List<String>> entry : queryParams.entrySet()) {
+    private String authenticate(Context ctx) throws IOException {
+        Map<String, String> params = new LinkedHashMap<>();
+        for (Map.Entry<String, List<String>> entry : ctx.queryParamMap().entrySet()) {
             if (!entry.getKey().startsWith("openid.")) {
                 continue;
             }
-            for (String value : entry.getValue()) {
-                formBuilder.add(entry.getKey(), value);
+            if (entry.getValue().size() != 1) {
+                return null;
             }
+            params.put(entry.getKey(), entry.getValue().get(0));
+        }
+
+        if (!OPENID_NS.equals(params.get("openid.ns"))) {
+            return null;
+        }
+        if (!"id_res".equals(params.get("openid.mode"))) {
+            return null;
+        }
+        if (!redirectUri.equals(params.get("openid.return_to"))) {
+            return null;
+        }
+        if (!STEAM_OPENID.equals(params.get("openid.op_endpoint"))) {
+            return null;
+        }
+
+        String claimedId = params.get("openid.claimed_id");
+        if (claimedId == null) {
+            return null;
+        }
+        Matcher matcher = CLAIMED_ID_PATTERN.matcher(claimedId);
+        if (!matcher.matches()) {
+            return null;
+        }
+        if (!claimedId.equals(params.get("openid.identity"))) {
+            return null;
+        }
+        if (!signsRequiredFields(params.get("openid.signed"))) {
+            return null;
+        }
+        if (params.get("openid.sig") == null) {
+            return null;
+        }
+
+        String nonce = params.get("openid.response_nonce");
+        if (!claimNonce(nonce)) {
+            return null;
+        }
+
+        boolean valid;
+        try {
+            valid = verifyWithSteam(params);
+        } catch (IOException e) {
+            usedNonces.remove(nonce);
+            throw e;
+        }
+        if (!valid) {
+            usedNonces.remove(nonce);
+            return null;
+        }
+
+        return matcher.group(1);
+    }
+
+    private static boolean signsRequiredFields(String signed) {
+        if (signed == null || signed.isBlank()) {
+            return false;
+        }
+        Set<String> fields = new HashSet<>(Arrays.asList(signed.split(",")));
+        return fields.containsAll(REQUIRED_SIGNED_FIELDS);
+    }
+
+    private boolean claimNonce(String nonce) {
+        if (nonce == null || nonce.length() <= NONCE_TIMESTAMP_LENGTH || nonce.length() > NONCE_MAX_LENGTH) {
+            return false;
+        }
+
+        Instant issuedAt;
+        try {
+            issuedAt = Instant.parse(nonce.substring(0, NONCE_TIMESTAMP_LENGTH));
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+
+        Instant now = Instant.now();
+        if (issuedAt.isBefore(now.minus(NONCE_MAX_AGE)) || issuedAt.isAfter(now.plus(NONCE_MAX_SKEW))) {
+            return false;
+        }
+
+        long expiryCutoff = now.minus(NONCE_MAX_AGE).minus(NONCE_MAX_AGE).toEpochMilli();
+        usedNonces.values().removeIf(storedAt -> storedAt < expiryCutoff);
+
+        return usedNonces.putIfAbsent(nonce, now.toEpochMilli()) == null;
+    }
+
+    private boolean verifyWithSteam(Map<String, String> params) throws IOException {
+        FormBody.Builder formBuilder = new FormBody.Builder();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            if ("openid.mode".equals(entry.getKey())) {
+                continue;
+            }
+            formBuilder.add(entry.getKey(), entry.getValue());
         }
         formBuilder.add("openid.mode", "check_authentication");
 
@@ -141,8 +248,12 @@ public class SteamLoginHandler implements LoginHandler {
             if (body == null) {
                 return false;
             }
-            String result = body.string();
-            return result.contains("is_valid:true");
+            for (String line : body.string().split("\\R")) {
+                if ("is_valid:true".equals(line)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -186,14 +297,6 @@ public class SteamLoginHandler implements LoginHandler {
             }
             return user;
         }
-    }
-
-    private static String extractSteamId(String claimedId) {
-        int lastSlash = claimedId.lastIndexOf('/');
-        if (lastSlash < 0 || lastSlash + 1 >= claimedId.length()) {
-            return null;
-        }
-        return claimedId.substring(lastSlash + 1);
     }
 
     private static String buildRealm(WebAppConfig config) {
